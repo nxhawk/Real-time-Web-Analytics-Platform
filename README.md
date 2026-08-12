@@ -7,11 +7,12 @@ Pulse Analytics ingests events from websites and apps over HTTP, stores them in 
 and serves a real-time dashboard: overview metrics, time series, top pages, device/country
 breakdowns, funnels, and retention cohorts.
 
-> **Status:** design phase. The repository currently contains the specification documents
-> ([`PLAN.md`](PLAN.md), [`PHASES.md`](PHASES.md), [`TODO.md`](TODO.md),
-> [`DEPLOY-AWS.md`](DEPLOY-AWS.md)).
-> Implementation follows the phase-by-phase plan in `PHASES.md` and the task checklist in
-> `TODO.md`.
+> **Status: Level 0 complete — the skeleton runs, the event pipeline does not exist yet.**
+> Both binaries build and serve their operational routes (`/healthz`, `/readyz`, `/version`,
+> `/metrics`), `make up` brings ClickHouse and the two services online, and CI lints, tests
+> and builds images. Event ingestion, the ClickHouse schema and the dashboard arrive in
+> Level 1. Progress is tracked in [`TODO.md`](TODO.md); the plan behind it is in
+> [`PLAN.md`](PLAN.md) and [`PHASES.md`](PHASES.md).
 
 ---
 
@@ -155,7 +156,7 @@ Two goals, in order of importance:
 
 | Layer | Technology | Version | Notes |
 |---|---|---|---|
-| Backend language | Go | 1.27 | `log/slog`, generics, graceful shutdown |
+| Backend language | Go | 1.26 | `log/slog`, generics, graceful shutdown |
 | HTTP framework | Gin | v1.11+ | zap/cors/gzip contribs |
 | Database | ClickHouse | 26.3 LTS | Single node; replication is a documented future path |
 | ClickHouse driver | `ClickHouse/clickhouse-go/v2` | v2.4x | Native protocol (port 9000) — never HTTP for inserts |
@@ -185,79 +186,168 @@ Two goals, in order of importance:
 
 ## Repository layout
 
+A monorepo, so the API contract and the client that consumes it move together and one CI run
+covers both. The Go side follows the conventional `cmd/` + `internal/` split: `cmd/` holds one
+tiny `main` per binary and nothing else, `internal/` holds everything the compiler must keep
+private to this module, and `pkg/` holds the few pieces that could reasonably be imported by
+someone else.
+
 ```
 pulse-analytics/
-├── backend/              # Go services
-│   ├── cmd/
-│   │   ├── ingest-api/       # HTTP event intake
-│   │   ├── analytics-api/    # HTTP query API
-│   │   ├── consumer/         # Kafka → ClickHouse sink
-│   │   ├── migrate/          # migration runner
-│   │   └── seeder/           # bulk event generator
-│   ├── internal/
-│   │   ├── config/ httpx/ handler/ service/
-│   │   ├── repository/clickhouse/   # conn, repos, go:embed'd .sql
-│   │   ├── buffer/ kafka/ model/ metrics/ validate/
-│   ├── migrations/       # numbered .up.sql / .down.sql
-│   └── test/             # integration tests + testdata
-├── frontend/             # Next.js dashboard
-├── sdk/js/               # pulse.js tracking snippet (~2 KB)
-├── deploy/               # caddy, clickhouse, kafka, grafana, prometheus
-├── infra/                # Terraform for the AWS production path
-├── loadtest/             # k6 scripts + ClickHouse vs PostgreSQL benchmark
-├── docs/                 # openapi.yaml, ADRs, notes, runbook
-├── docker-compose.yml           # dev: clickhouse + kafka + api + web
-├── docker-compose.prod.yml
-├── docker-compose.bench.yml     # adds PostgreSQL for the benchmark suite
-├── PLAN.md               # full technical specification
-├── PHASES.md             # phase-by-phase delivery plan (entry/exit criteria)
-├── TODO.md               # execution checklist by level
-├── DEPLOY-AWS.md         # Vercel + EC2 deployment guide
-└── CLAUDE.md             # conventions for AI coding agents
+├── backend/                        # Go services — one module
+│   ├── cmd/                        # one directory per binary; main() only wires dependencies
+│   │   ├── ingest-api/             #   write path: accepts events over HTTP
+│   │   ├── analytics-api/          #   read path: answers dashboard queries
+│   │   ├── consumer/               #   Kafka → ClickHouse sink              (Level 4)
+│   │   ├── migrate/                #   migration runner                     (Level 1)
+│   │   └── seeder/                 #   synthetic event generator            (Level 3)
+│   ├── internal/                   # private to this module — the compiler enforces it
+│   │   ├── config/                 #   the ONLY package that reads the environment
+│   │   ├── logging/                #   slog setup (JSON in production, text locally)
+│   │   ├── version/                #   build metadata injected via -ldflags
+│   │   ├── metrics/                #   the single Prometheus registry
+│   │   ├── httpx/                  #   transport plumbing: middleware, error envelope,
+│   │   │                           #   graceful-shutdown server, base gin engine
+│   │   ├── handler/                #   HTTP layer: decode → call a service → encode
+│   │   ├── service/                #   business rules: validation, enrichment, orchestration
+│   │   ├── repository/             #   storage access, no business logic
+│   │   │   ├── clickhouse/         #     connection, repos, queries/*.sql via go:embed
+│   │   │   └── postgres/           #     benchmark comparison only            (Level 3)
+│   │   ├── model/                  #   domain types shared across layers
+│   │   ├── validate/               #   event validation rules                (Level 1)
+│   │   ├── buffer/                 #   batch writer, backpressure, WAL fallback (Level 3)
+│   │   └── kafka/                  #   producer, consumer, DLQ               (Level 4)
+│   ├── pkg/                        # importable from outside: geoip, uaparser wrappers
+│   ├── migrations/                 # numbered goose migrations, .up.sql / .down.sql
+│   ├── test/                       # integration tests (testcontainers) + fixtures
+│   ├── Dockerfile                  # multi-stage → distroless, one image per SERVICE arg
+│   └── .golangci.yml               # lint configuration
+│
+├── frontend/                       # Next.js dashboard                      (Level 1)
+├── sdk/js/                         # pulse.js tracking snippet, < 2 KB gzip (Level 5)
+│
+├── deploy/                         # runtime configuration, not application code
+│   ├── caddy/                      #   reverse proxy + automatic TLS
+│   ├── clickhouse/config.d/        #   server settings: memory, logging, Prometheus
+│   ├── clickhouse/users.d/         #   profiles and quotas: query guards, readonly user
+│   ├── kafka/ prometheus/ grafana/ #   the rest of the stack                (Levels 4, 6)
+│   └── scripts/                    #   deployment helpers
+│
+├── infra/                          # Terraform for the AWS production path  (AWS phase)
+├── loadtest/                       # k6 scripts + ClickHouse vs PostgreSQL benchmark
+│
+├── docs/                           # documentation site (VitePress, EN + VI) + API contract
+│   ├── .vitepress/config/          #   shared.mts (base, search), en.mts, vi.mts
+│   ├── guide/ reference/           #   English pages — the root locale, no URL prefix
+│   ├── notes/ adr/ roadmap.md      #   engineering notes and decision records
+│   ├── vi/                         #   Vietnamese mirror — same tree, same filenames
+│   ├── public/                     #   static assets served at the site root
+│   └── api/openapi.yaml            #   API CONTRACT — the single source of truth
+│
+├── docker-compose.yml              # dev stack: ClickHouse + both APIs
+├── docker-compose.prod.yml         # production stack                       (Level 6)
+├── docker-compose.bench.yml        # adds PostgreSQL for the benchmark      (Level 3)
+├── Makefile                        # every development command — run `make help`
+├── .env.example                    # every configuration variable, documented
+│
+├── README.md                       # this file
+├── PLAN.md                         # full technical specification
+├── PHASES.md                       # phase-by-phase delivery plan and canonical numbers
+├── TODO.md                         # execution checklist by level
+├── DEPLOY-AWS.md                   # Vercel + EC2 deployment guide
+├── CONTRIBUTING.md                 # setup, branching, commit and code conventions
+└── CLAUDE.md                       # conventions for AI coding agents
 ```
 
-The full tree, including every `internal/` package and migration file, is in
-[`PLAN.md` §4](PLAN.md#4-cấu-trúc-repository).
+### Why the layers are split this way
+
+Dependencies point in one direction only — `cmd` → `handler` → `service` → `repository` — and
+never back. A repository does not import a handler, and nothing outside `config` reads an
+environment variable.
+
+| Layer | Responsibility | Must not |
+|---|---|---|
+| `cmd/` | Wire dependencies, start the server, handle shutdown | Contain business logic |
+| `handler/` | Decode the request, call one service, encode the response | Talk to storage or build SQL |
+| `service/` | Business rules: validation, enrichment, orchestration | Know it is being called over HTTP |
+| `repository/` | Storage access, hand-written SQL | Contain business rules |
+| `httpx/` | Transport plumbing reusable by any service | Know anything about analytics |
+| `config/` | Read and validate the environment | Be bypassed by `os.Getenv` elsewhere |
+
+Two extension points are already in place so later levels are additive rather than invasive:
+`handler.Prober` (anything with a `Check(ctx)` can be added to `/readyz` — ClickHouse in Level 1,
+Kafka in Level 4), and `httpx.Server.Run(ctx, hooks...)` (a shutdown hook flushes the batch
+writer in Level 3 so no accepted event is lost on deploy).
+
+The full tree with every planned file is in [`PLAN.md` §4](PLAN.md#4-cấu-trúc-repository).
 
 ---
 
 ## Quick start
 
-**Prerequisites:** Docker + Docker Compose v2, Go 1.27, Node.js 22+, `make`.
+**Prerequisites:** Docker + Docker Compose v2, Go 1.26, Node.js 22+, `make`.
 
 ```bash
 # 1. Configure
 cp .env.example .env
 
-# 2. Start infrastructure (ClickHouse, Kafka) and the API services
+# 2. Resolve Go dependencies (first time only — this writes backend/go.sum)
+make deps
+
+# 3. Start ClickHouse and both API services, then wait until they are healthy
 make up
 
-# 3. Apply database migrations
+# 4. Apply database migrations                       (available from Level 1)
 make migrate-up
 
-# 4. Seed sample data (optional)
+# 5. Seed sample data, optional                      (available from Level 3)
 make seed
 
-# 5. Open the dashboard
+# 6. Open the dashboard                              (available from Level 1)
 open http://localhost:3000
+```
+
+Right now — with Level 0 complete — steps 1 to 3 work and give you two running services:
+
+```bash
+curl localhost:8080/healthz    # {"status":"ok"}
+curl localhost:8080/readyz     # {"status":"ok","checks":{}}
+curl localhost:8080/version    # tag, commit, build time, Go version
+curl localhost:8080/metrics    # Prometheus exposition
+curl localhost:8081/healthz    # the analytics API answers the same operational routes
+```
+
+Running the API on the host instead of in a container, against the containerised ClickHouse:
+
+```bash
+make down-app   # stop the API containers, keep ClickHouse
+make run        # go run ./cmd/ingest-api
 ```
 
 ### Common Make targets
 
+`make help` prints all of them. The ones used daily:
+
 | Target | Description |
 |---|---|
+| `make deps` | Resolve and download Go dependencies (run once after cloning) |
 | `make up` / `make down` | Start / stop the Docker Compose stack |
-| `make logs` / `make ps` | Tail logs / list services |
-| `make build` / `make run` | Build / run backend binaries locally |
-| `make test` / `make test-int` | Unit tests / integration tests (testcontainers) |
-| `make lint` / `make fmt` | golangci-lint / gofmt + goimports |
+| `make health` | Poll `/healthz` on both APIs until they answer |
+| `make logs` / `make ps` | Tail logs (`make logs S=ingest-api`) / list services |
+| `make build` / `make run` | Build binaries into `backend/bin/` / run the ingest API |
+| `make test` / `make test-int` | Unit tests with race detector / integration tests |
+| `make lint` / `make fmt` / `make vet` | golangci-lint / gofmt + goimports / go vet |
+| `make check` | Everything CI runs, in one command |
 | `make migrate-up` / `make migrate-down` | Apply / roll back migrations |
-| `make seed` | Generate synthetic events |
+| `make seed` | Generate synthetic events (`make seed N=10000000`) |
 | `make bench` | Run the ClickHouse vs PostgreSQL benchmark suite |
 | `make ch-cli` | Open a `clickhouse-client` shell |
-| `make clean` | Remove build artifacts and local data |
+| `make tools` | Install golangci-lint and goimports |
+| `make clean` / `make nuke` | Remove build artifacts / also delete the data volumes |
 
 ### Sending your first event
+
+> Available from Level 1, once the ingest endpoint and the `events` table exist.
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/events \
@@ -437,8 +527,30 @@ intentionally skipped in `TODO.md` — see
 
 ## Documentation
 
+### The documentation site
+
+Narrative documentation lives in `docs/` as a [VitePress](https://vitepress.dev) site,
+published to GitHub Pages at
+**<https://nxhawk.github.io/Real-time-Web-Analytics-Platform/>**.
+
+English is the default locale and sits at the root; Vietnamese mirrors the same tree under
+`/vi/`. Every page exists in both languages, and the sidebar, search UI and footer are
+translated too.
+
+```bash
+cd docs
+npm ci
+npm run dev      # http://localhost:5173, hot reload
+npm run build    # static output; fails the build on a dead internal link
+```
+
+Pushing to `main` with changes under `docs/` deploys automatically via
+`.github/workflows/docs.yml`. Pull requests build but do not deploy, so a broken link is
+caught before merge.
+
 | Document | Contents |
 |---|---|
+| [Documentation site](https://nxhawk.github.io/Real-time-Web-Analytics-Platform/) | Guides, reference, engineering notes and ADRs — English and Vietnamese |
 | [`PLAN.md`](PLAN.md) | Full specification: architecture, schema, ClickHouse design, MVs, query cookbook, backend/frontend design, testing, CI/CD, benchmarks, ADRs |
 | [`PHASES.md`](PHASES.md) | Phase-by-phase delivery plan: entry/exit criteria, deliverables, metrics to record, risks, traceability matrix, canonical numbers |
 | [`TODO.md`](TODO.md) | Execution checklist by level, with estimates and acceptance criteria |

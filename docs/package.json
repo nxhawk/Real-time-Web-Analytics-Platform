@@ -1,0 +1,21 @@
+{
+  "name": "pulse-analytics-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Documentation site for Pulse Analytics, built with VitePress (English + Vietnamese)",
+  "scripts": {
+    "predev": "node scripts/copy-assets.mjs",
+    "dev": "vitepress dev",
+    "prebuild": "node scripts/copy-assets.mjs",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
+    "check-links": "vitepress build"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

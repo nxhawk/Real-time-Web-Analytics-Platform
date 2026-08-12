@@ -89,13 +89,15 @@ Dùng chung với `TODO.md`: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong 
 
 | Thành phần | Version chốt | Tham chiếu |
 |---|---|---|
-| Go | **1.27** | [`PLAN.md` §3](PLAN.md#3-tech-stack--version) |
+| Go | **1.26** | [`PLAN.md` §3](PLAN.md#3-tech-stack--version) — 1.27 vẫn ở mức rc tại thời điểm chốt |
 | ClickHouse | **26.3 LTS** | như trên |
 | Kafka | **4.x (KRaft)** — dev có thể thay Redpanda | như trên |
 | Next.js / React | **16.3 / 19** | như trên |
 | Migration tool | **goose** (đã chốt, không dùng golang-migrate) | [`TODO.md` L1-06](TODO.md#l12--migration--bảng-events-5h) |
 | Kafka client Go | `twmb/franz-go` | [`PLAN.md` §3](PLAN.md#3-tech-stack--version) |
 | Registry image | **GHCR** cho dev/CI · **ECR** cho production AWS | [`DEPLOY-AWS.md` §10](DEPLOY-AWS.md#10-cicd-github-actions--ecr--ssm) |
+| Node.js | **22 LTS** | dashboard và trang tài liệu |
+| Trang tài liệu | **VitePress 1.6** | `docs/`, song ngữ EN (mặc định) + VI, deploy GitHub Pages |
 
 ### 2.2 Ngưỡng hiệu năng (hard requirement)
 
@@ -170,6 +172,7 @@ Dùng thống nhất ở L3 (seeder), L5 (kiểm chứng funnel/retention) và m
 | | **Tổng lộ trình chính** | **232** | **~207h** | | |
 | **AWS** | Hạ tầng production (thay L6.4) | 32 | 14h | Phase 2 | — |
 | | **Tổng khi đi đường AWS** | **255** | **~214h** | | |
+| **DOC** | Trang tài liệu VitePress — song song, không tính vào tổng | 8 | 6h | — | — |
 
 > Đường AWS **thay thế** L6-20 → L6-28 (9 task, 7h) bằng 32 task AWS (14h):
 > `232 − 9 + 32 = 255 task`, `207 − 7 + 14 = 214 giờ`.
@@ -216,7 +219,7 @@ Dựng bộ khung để mọi phase sau chỉ việc thêm code: repo có quy ư
 ### Điều kiện vào
 
 - Đã đọc [`PLAN.md` §1–§4](PLAN.md#1-mục-tiêu--phạm-vi) và hiểu mục tiêu học tập quan trọng hơn mục tiêu sản phẩm.
-- Máy có Docker + Compose v2, Go 1.27, Node 22+, `make`.
+- Máy có Docker + Compose v2, Go 1.26, Node 22+, `make`.
 
 ### Phạm vi công việc
 

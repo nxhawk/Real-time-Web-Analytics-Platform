@@ -1,0 +1,53 @@
+# --- Go ---
+bin/
+dist/
+*.exe
+*.test
+*.out
+coverage.out
+coverage.html
+vendor/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# --- VitePress docs site ---
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/public/openapi.yaml
+
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- Local data & runtime ---
+data/
+wal/
+*.log
+tmp/
+
+# --- Terraform ---
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+crash.log
+
+# --- Editors & OS ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Go workspaces are a local-only tool
+go.work
+go.work.sum

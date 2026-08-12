@@ -182,7 +182,7 @@ Xây một analytics platform tự host, nhận event từ website/app, lưu và
 
 | Layer | Công nghệ | Version (8/2026) | Ghi chú |
 |---|---|---|---|
-| Language BE | Go | **1.27** | Có generic methods, JSON v2 engine — dùng `encoding/json/v2` cho ingest nếu ổn định |
+| Language BE | Go | **1.26** | Bản stable mới nhất; 1.27 còn là rc nên không dùng cho production |
 | HTTP framework | Gin | v1.11+ | `gin-contrib/zap`, `gin-contrib/cors`, `gin-contrib/gzip` |
 | DB | ClickHouse | **26.3 LTS** (hoặc 26.7 stable) | Chạy single node; ghi chú path lên Replicated |
 | CH driver | `github.com/ClickHouse/clickhouse-go/v2` | v2.4x | Native protocol (port 9000), KHÔNG dùng HTTP cho insert |
@@ -353,16 +353,32 @@ pulse-analytics/
 │       ├── queries_postgres.sql
 │       └── run_bench.go
 │
-└── docs/
-    ├── api/openapi.yaml
-    ├── adr/0001-....md
-    ├── clickhouse-notes.md       # ghi chép học được (L2, >= 20 mục)
-    ├── queries-ops.sql           # query "soi bảng" (L2)
-    ├── benchmark-results.md      # kết quả CH vs PG (L3)
-    └── runbook.md                # xử lý sự cố + RTO thực tế
+└── docs/                         # trang tài liệu VitePress (song ngữ) + contract API
+    ├── package.json              # `npm run dev` / `npm run build`
+    ├── .vitepress/
+    │   ├── config.mts            # gộp hai locale
+    │   └── config/               # shared.mts (base, search), en.mts, vi.mts (nav + sidebar)
+    ├── public/                   # asset tĩnh: logo.svg, openapi.yaml (sinh lúc build)
+    ├── scripts/copy-assets.mjs   # copy docs/api/openapi.yaml sang public/
+    ├── index.md                  # trang chủ tiếng Anh (locale gốc, không có prefix URL)
+    ├── guide/                    # introduction, quick-start, configuration, architecture,
+    │                             # project-structure, contributing, deployment
+    ├── reference/                # api, event-schema, clickhouse, observability
+    ├── notes/                    # clickhouse-notes (L2), benchmark-results (L3), runbook (L6)
+    ├── adr/                      # mỗi quyết định một file: 0001-no-orm.md, ...
+    ├── roadmap.md
+    ├── vi/                       # bản tiếng Việt — cùng cây thư mục, cùng tên file
+    ├── api/openapi.yaml          # CONTRACT API — nguồn sự thật, sinh type FE từ đây
+    └── queries-ops.sql           # query "soi bảng" (L2)
 ```
 
 > Task tạo cây thư mục này là `L0-04`; task đưa toàn bộ tài liệu vào repo là `L0-06`.
+>
+> **Trang docs.** Nội dung diễn giải nằm trong `docs/` dưới dạng site VitePress song ngữ
+> (tiếng Anh mặc định ở gốc, tiếng Việt dưới `/vi/`), tự deploy lên GitHub Pages qua
+> `.github/workflows/docs.yml` khi push `main` có thay đổi trong `docs/`. Pull request thì
+> build nhưng không deploy, nên link chết bị chặn trước khi merge. Nhóm task: `DOC-01`→`DOC-08`
+> trong [`TODO.md`](TODO.md#trang-tài-liệu-docs-site).
 
 ---
 
@@ -1329,7 +1345,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
-        with: { go-version: '1.27', cache-dependency-path: backend/go.sum }
+        with: { go-version: '1.26', cache-dependency-path: backend/go.sum }
       - run: go mod verify
         working-directory: backend
       - uses: golangci/golangci-lint-action@v6
@@ -1349,7 +1365,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
-        with: { go-version: '1.27' }
+        with: { go-version: '1.26' }
       - run: go run ./cmd/migrate up
         working-directory: backend
         env: { CLICKHOUSE_DSN: 'clickhouse://localhost:9000/analytics' }

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+  Server-level overrides for local development.
+
+  Production values live in DEPLOY-AWS.md section 9, where the box has 32 GB and ClickHouse
+  gets a fixed slice of it. Here the goal is the opposite: keep ClickHouse from eating a
+  laptop while the rest of the stack runs next to it.
+-->
+<clickhouse>
+    <!-- Warning level keeps the log readable; switch to "debug" when investigating. -->
+    <logger>
+        <level>warning</level>
+        <console>true</console>
+        <size>200M</size>
+        <count>3</count>
+    </logger>
+
+    <!-- Hard ceiling for the whole server. 4 GiB is plenty for Levels 0-2 on a laptop. -->
+    <max_server_memory_usage>4294967296</max_server_memory_usage>
+
+    <!-- Caches sized for a development box, not for a benchmark run. -->
+    <mark_cache_size>536870912</mark_cache_size>
+    <uncompressed_cache_size>0</uncompressed_cache_size>
+
+    <!-- One background pool that fits a laptop; merges are the main CPU consumer. -->
+    <background_pool_size>8</background_pool_size>
+    <background_schedule_pool_size>8</background_schedule_pool_size>
+
+    <!-- Keep the system tables from growing without bound during experiments. Level 2 reads
+         query_log heavily, so it is kept but capped by TTL. -->
+    <query_log>
+        <database>system</database>
+        <table>query_log</table>
+        <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+        <ttl>event_date + INTERVAL 14 DAY DELETE</ttl>
+    </query_log>
+    <metric_log>
+        <database>system</database>
+        <table>metric_log</table>
+        <flush_interval_milliseconds>7500</flush_interval_milliseconds>
+        <collect_interval_milliseconds>1000</collect_interval_milliseconds>
+        <ttl>event_date + INTERVAL 7 DAY DELETE</ttl>
+    </metric_log>
+
+    <!-- Native Prometheus endpoint. Level 6 points a scrape job at :9363/metrics. -->
+    <prometheus>
+        <endpoint>/metrics</endpoint>
+        <port>9363</port>
+        <metrics>true</metrics>
+        <events>true</events>
+        <asynchronous_metrics>true</asynchronous_metrics>
+    </prometheus>
+
+    <!-- Features this project does not use; turning them off shrinks the attack surface. -->
+    <mysql_port remove="remove"/>
+    <postgresql_port remove="remove"/>
+</clickhouse>

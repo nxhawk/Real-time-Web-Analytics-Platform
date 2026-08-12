@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<!--
+  Two profiles, two users.
+
+  * pulse      — the application. Can write, and every query it runs is bounded by
+                 max_execution_time and max_memory_usage (PLAN section 12.5).
+  * dashboard  — read-only. Level 6 points the analytics API at this user so a bug in a
+                 handler cannot mutate data.
+
+  The guards are set here, at the profile level, on purpose: a per-query SETTINGS clause is
+  easy to forget, while a profile applies even to a query typed by hand in clickhouse-client.
+-->
+<clickhouse>
+    <profiles>
+        <pulse_app>
+            <!-- PHASES.md section 2.3: every analytics query is capped. -->
+            <max_execution_time>15</max_execution_time>
+            <max_memory_usage>4000000000</max_memory_usage>
+            <max_bytes_before_external_group_by>2000000000</max_bytes_before_external_group_by>
+
+            <!-- Fail fast instead of queueing when the server is saturated. -->
+            <max_concurrent_queries_for_user>32</max_concurrent_queries_for_user>
+
+            <!-- Insert path: LZ4 on the wire, and never wait for a distributed ack. -->
+            <network_compression_method>LZ4</network_compression_method>
+            <insert_distributed_sync>0</insert_distributed_sync>
+
+            <!-- Level 3 compares client-side batching against async_insert; the comparison is
+                 only fair if async_insert is off by default. -->
+            <async_insert>0</async_insert>
+
+            <log_queries>1</log_queries>
+        </pulse_app>
+
+        <pulse_readonly>
+            <max_execution_time>15</max_execution_time>
+            <max_memory_usage>4000000000</max_memory_usage>
+            <readonly>2</readonly>
+            <log_queries>1</log_queries>
+        </pulse_readonly>
+    </profiles>
+
+    <users>
+        <pulse>
+            <profile>pulse_app</profile>
+            <quota>default</quota>
+            <networks><ip>::/0</ip></networks>
+            <access_management>0</access_management>
+        </pulse>
+
+        <dashboard>
+            <!-- Password is set from the environment at deploy time; empty here means the
+                 user is unusable until a real one is provisioned. -->
+            <password></password>
+            <profile>pulse_readonly</profile>
+            <quota>dashboard</quota>
+            <networks><ip>::/0</ip></networks>
+        </dashboard>
+    </users>
+
+    <quotas>
+        <dashboard>
+            <interval>
+                <duration>3600</duration>
+                <queries>10000</queries>
+                <errors>500</errors>
+                <execution_time>1800</execution_time>
+            </interval>
+        </dashboard>
+    </quotas>
+</clickhouse>

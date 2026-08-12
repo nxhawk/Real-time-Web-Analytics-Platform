@@ -1,0 +1,9 @@
+# Every pull request needs a review from the repository owner.
+* @nxhawk
+
+# Areas where a mistake is expensive — listed explicitly so they are easy to reassign
+# once more people work on the project.
+/backend/migrations/   @nxhawk
+/infra/                @nxhawk
+/.github/workflows/    @nxhawk
+/deploy/               @nxhawk

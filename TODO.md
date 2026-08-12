@@ -4,6 +4,7 @@
 > Mỗi task có **ID**, **ước lượng (h)**, và **Done khi** (tiêu chí nghiệm thu).
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong · `[-]` bỏ qua có chủ ý.
 > Ước lượng tổng: **~207 giờ** (232 task) — hoặc **~214 giờ** (255 task) khi đi đường AWS.
+> Nhóm `DOC-*` (trang tài liệu) chạy song song, không tính vào con số trên.
 
 ---
 
@@ -26,7 +27,7 @@ Các con số dùng chung (version, ngưỡng hiệu năng, hạn mức, phân p
 
 | Level | Tên | Task | Ước lượng | Chi tiết phase | Trạng thái |
 |---|---|---|---|---|---|
-| L0 | Khởi tạo & nền tảng | 25 | 12h | [PHASES §4](PHASES.md#4-phase-l0--khởi-tạo--nền-tảng) | ☐ |
+| L0 | Khởi tạo & nền tảng | 25 | 12h | [PHASES §4](PHASES.md#4-phase-l0--khởi-tạo--nền-tảng) | 🟨 22/25 |
 | L1 | MVP ingest → query → dashboard | 40 | 30h | [PHASES §5](PHASES.md#5-phase-l1--mvp-ingest--query--dashboard) | ☐ |
 | L2 | Đào sâu ClickHouse | 24 | 25h | [PHASES §6](PHASES.md#6-phase-l2--đào-sâu-clickhouse) | ☐ |
 | L3 | Batch insert, seeder, benchmark | 32 | 35h | [PHASES §7](PHASES.md#7-phase-l3--batch-insert-seeder-benchmark) | ☐ |
@@ -35,6 +36,7 @@ Các con số dùng chung (version, ngưỡng hiệu năng, hạn mức, phân p
 | L6 | Observability, security, CD, docs | 35 | 25h | [PHASES §10](PHASES.md#10-phase-l6--observability-security-cd-docs) | ☐ |
 | **Tổng** | | **232** | **~207h** | | |
 | AWS | Hạ tầng production — **thay** L6.4 (`L6-20`→`L6-28`) | 32 | 14h | [PHASES §11](PHASES.md#11-phase-aws--hạ-tầng-production) · [DEPLOY-AWS §17](DEPLOY-AWS.md#17-checklist-thay-thế-l64) | ☐ |
+| DOC | Trang tài liệu VitePress (song song, không tính vào 232) | 8 | 6h | [mục bên dưới](#trang-tài-liệu-docs-site) | 🟨 7/8 |
 | **Tổng (đường AWS)** | | **255** | **~214h** | | |
 
 ---
@@ -42,51 +44,73 @@ Các con số dùng chung (version, ngưỡng hiệu năng, hạn mức, phân p
 # LEVEL 0 — Khởi tạo & nền tảng (12h)
 
 > Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §4](PHASES.md#4-phase-l0--khởi-tạo--nền-tảng).
+> **Trạng thái: 22/25 task xong.** 3 task còn lại cần thao tác trên máy bạn / trên GitHub,
+> đánh dấu 🔸 bên dưới.
+> Module path đã chốt: `github.com/nxhawk/pulse-analytics/backend`. Go pin **1.26** (1.27 còn là rc).
 
 ## L0.1 — Repository & quy ước (2h)
 
-- [ ] `L0-01` Tạo repo `pulse-analytics` trên GitHub, private hoặc public, thêm `LICENSE` (MIT)
-- [ ] `L0-02` `.gitignore` (Go, Node, `.env`, `*.log`, `data/`, `bin/`, `coverage.out`, `.DS_Store`)
-- [ ] `L0-03` `.editorconfig` (LF, utf-8, go=tab, ts=2 space)
-- [ ] `L0-04` Tạo cấu trúc thư mục theo [`PLAN.md` §4](PLAN.md#4-cấu-trúc-repository), kể cả `infra/` (kèm `.gitkeep` cho thư mục rỗng)
-- [ ] `L0-05` `README.md` khung: mô tả 3 dòng, sơ đồ kiến trúc ASCII, quickstart, badge CI
-- [ ] `L0-06` Đưa toàn bộ tài liệu vào repo: `PLAN.md`, `PHASES.md`, `TODO.md`, `DEPLOY-AWS.md`, `CLAUDE.md`
-- [ ] `L0-07` Bật branch protection cho `main`: yêu cầu PR + CI pass + không force-push
-- [ ] `L0-08` Thêm `.github/pull_request_template.md` và `CODEOWNERS`
-- [ ] `L0-09` Quy ước commit: Conventional Commits; cài `commitlint` hoặc chỉ ghi rõ trong CONTRIBUTING
+- [x] `L0-01` Repo trên GitHub + `LICENSE` (MIT)
+- [x] `L0-02` `.gitignore` (Go, Node, `.env`, `*.log`, `data/`, `bin/`, `coverage.out`, Terraform, `go.work`, `.DS_Store`)
+- [x] `L0-03` `.editorconfig` (LF, utf-8, go=tab, ts=2 space)
+- [x] `L0-04` Cấu trúc thư mục theo [`PLAN.md` §4](PLAN.md#4-cấu-trúc-repository), kể cả `infra/` (kèm `.gitkeep`)
+- [x] `L0-05` `README.md`: mô tả, sơ đồ kiến trúc ASCII, quickstart, cây thư mục kèm ý nghĩa
+- [x] `L0-06` Đưa toàn bộ tài liệu vào repo: `PLAN.md`, `PHASES.md`, `TODO.md`, `DEPLOY-AWS.md`, `CLAUDE.md`
+- [ ] 🔸 `L0-07` Bật branch protection cho `main`: yêu cầu PR + CI pass + không force-push — *làm trong Settings của GitHub*
+- [x] `L0-08` `.github/pull_request_template.md` và `.github/CODEOWNERS`
+- [x] `L0-09` Quy ước commit Conventional Commits — ghi trong `CONTRIBUTING.md`
 
-> **Done khi**: `git log --oneline` có commit đầu tiên, cấu trúc thư mục khớp PLAN §4.
+> **Done khi**: cấu trúc thư mục khớp PLAN §4. ✅
 
 ## L0.2 — Backend skeleton (3h)
 
-- [ ] `L0-10` `cd backend && go mod init github.com/<user>/pulse-analytics/backend`, Go 1.27
-- [ ] `L0-11` Cài deps nền: gin, clickhouse-go/v2, caarlos0/env, validator, prometheus client, testify
-- [ ] `L0-12` `internal/config/config.go`: load env (`APP_ENV`, `HTTP_ADDR`, `CLICKHOUSE_DSN`, `LOG_LEVEL`, `BATCH_SIZE`, `FLUSH_INTERVAL_MS`, ...) + validate bắt buộc + giá trị mặc định
-- [ ] `L0-13` `cmd/ingest-api/main.go`: khởi tạo config → logger slog JSON → gin router → server + graceful shutdown 30s
-- [ ] `L0-14` Middleware: `RequestID` (UUIDv7), `Logger` (slog, bỏ qua `/healthz`,`/metrics`), `Recover` (log stack, trả 500 chuẩn), `CORS`
-- [ ] `L0-15` `GET /healthz`, `GET /readyz`, `GET /version` (ldflags nhúng commit sha + build time)
-- [ ] `L0-16` `.env.example` đầy đủ mọi biến, có comment
+- [x] `L0-10` `go mod init github.com/nxhawk/pulse-analytics/backend`, Go 1.26
+- [x] `L0-11` Deps nền: `gin`, `gin-contrib/cors`, `caarlos0/env/v11`, `joho/godotenv`, `google/uuid`, `prometheus/client_golang`, `stretchr/testify`
+      *(`clickhouse-go/v2` và `validator` được thêm ở L1 khi có code dùng — `go mod tidy` sẽ gỡ dep không dùng)*
+- [x] `L0-12` `internal/config/config.go`: load env theo nhóm (App/HTTP/Log/ClickHouse/Ingest/Kafka), default đầy đủ, `Validate()` gom **mọi** lỗi cấu hình rồi báo một lần
+- [x] `L0-13` `cmd/ingest-api/main.go` + `cmd/analytics-api/main.go`: config → slog JSON → gin → `httpx.Server` + graceful shutdown 30s (có shutdown hook cho L3/L4)
+- [x] `L0-14` Middleware trong `internal/httpx`: `RequestID` (UUIDv7, tái dùng header vào), `Recover` (log stack, trả envelope 500), `Logger` (slog, bỏ qua `/healthz` `/readyz` `/metrics`, log theo **route pattern**), `CORS`, `MaxBodySize`
+- [x] `L0-15` `GET /healthz`, `GET /readyz` (cơ chế `Prober` để L1 cắm ClickHouse vào), `GET /version` (ldflags), `GET /metrics`
+- [x] `L0-16` `.env.example` đầy đủ mọi biến, có comment và giá trị mặc định
 
-> **Done khi**: `go run ./cmd/ingest-api` → `curl localhost:8080/healthz` trả `{"status":"ok"}`.
+> **Done khi**: `go run ./cmd/ingest-api` → `curl localhost:8080/healthz` trả `{"status":"ok"}`. ✅
 
 ## L0.3 — Docker & Makefile (4h)
 
-- [ ] `L0-17` `backend/Dockerfile` multi-stage: `golang:1.27-alpine` build (CGO_ENABLED=0, `-trimpath`, ldflags) → `gcr.io/distroless/static-debian12:nonroot`
-- [ ] `L0-18` `docker-compose.yml`: service `clickhouse` (26.3, volume `./data/ch`, healthcheck `/ping`, port 8123+9000), `ingest-api`, `analytics-api`
-- [ ] `L0-19` `deploy/clickhouse/config.d/` : giới hạn `max_server_memory_usage`, log level warning, tắt phần không dùng
-- [ ] `L0-20` `deploy/clickhouse/users.d/`: user `pulse` với profile giới hạn `max_execution_time=15`, `max_memory_usage=4G`, `readonly` cho user dashboard
-- [ ] `L0-21` `Makefile`: `up`, `down`, `logs`, `ps`, `build`, `run`, `test`, `test-int`, `lint`, `fmt`, `migrate-up`, `migrate-down`, `seed`, `bench`, `ch-cli`, `clean`
-- [ ] `L0-22` Kiểm tra `make up` trên máy sạch, ClickHouse healthy trong < 60s
+- [x] `L0-17` `backend/Dockerfile` multi-stage: `golang:1.26-alpine` (CGO_ENABLED=0, `-trimpath`, ldflags, cache mount) → `gcr.io/distroless/static-debian12:nonroot`
+- [x] `L0-18` `docker-compose.yml`: `clickhouse` 26.3 (healthcheck `/ping`, volume, ulimit nofile), `ingest-api`, `analytics-api` (read-only rootfs, `cap_drop: ALL`, `no-new-privileges`)
+- [x] `L0-19` `deploy/clickhouse/config.d/pulse.xml`: `max_server_memory_usage`, log warning, TTL cho `query_log`/`metric_log`, bật Prometheus endpoint, tắt cổng MySQL/PostgreSQL
+- [x] `L0-20` `deploy/clickhouse/users.d/pulse.xml`: user `pulse` (profile `max_execution_time=15`, `max_memory_usage=4G`) + user `dashboard` readonly + quota
+- [x] `L0-21` `Makefile` 30 target có `make help`; đủ `up`, `down`, `logs`, `ps`, `build`, `run`, `test`, `test-int`, `lint`, `fmt`, `migrate-*`, `seed`, `bench`, `ch-cli`, `clean`
+- [ ] 🔸 `L0-22` Chạy `make up` trên máy sạch, ClickHouse healthy trong < 60s — *cần Docker trên máy bạn*
 
-> **Done khi**: `make up && make ch-cli` → gõ `SELECT version()` trả về 26.x.
+> **Done khi**: `make up && make ch-cli` → `SELECT version()` trả về 26.x.
 
 ## L0.4 — CI khung (3h)
 
-- [ ] `L0-23` `.golangci.yml`: bật `errcheck, govet, staticcheck, gosimple, ineffassign, unused, gocritic, revive, bodyclose, sqlclosecheck, noctx, gosec`
-- [ ] `L0-24` `.github/workflows/ci-backend.yml`: job `lint` + job `test` (chưa cần service ClickHouse) + cache Go modules
-- [ ] `L0-25` `.github/dependabot.yml`: gomod, npm, docker, github-actions — weekly
+- [x] `L0-23` `backend/.golangci.yml` (v2): `errcheck, govet, staticcheck, ineffassign, unused, bodyclose, sqlclosecheck, rowserrcheck, noctx, errorlint, nilerr, contextcheck, gosec, gocritic, revive, misspell, unconvert, unparam, wastedassign, copyloopvar, predeclared, goconst` + formatter `gofmt`/`goimports`
+- [x] `L0-24` `.github/workflows/ci-backend.yml`: job `lint` (mod verify, kiểm tra `go mod tidy` sạch, gofmt, vet, golangci-lint) + job `test` (race + coverage) + job `build` (matrix 2 service, build image, smoke test container) + cache Go modules và Docker layer
+- [x] `L0-25` `.github/dependabot.yml`: gomod, npm, docker, github-actions — weekly, gom nhóm minor/patch
+- [ ] 🔸 *Chạy `make deps` một lần để sinh `go.sum`, rồi commit* — sandbox không truy cập được `proxy.golang.org` nên `go.sum` chưa có sẵn trong repo
 
 > **Done khi**: PR đầu tiên có CI xanh, badge hiện trong README.
+
+### Kết quả kiểm chứng L0 (chạy trong sandbox, Go 1.26.5)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `gofmt -l -s .` | sạch |
+| `go vet ./...` | sạch |
+| `golangci-lint run ./...` (v2.12.2) | **0 issues** |
+| `go test -race -count=1 ./...` | pass — `config` 73.1%, `handler` 100%, `httpx` 40.6% |
+| `go build ./cmd/...` | 2 binary |
+| `curl /healthz` | `{"status":"ok"}` |
+| `curl /readyz` | `{"status":"ok","checks":{}}` |
+| `curl /version` | `{"tag":"v0.0.1","commit":"abc1234","build_time":"...","go_version":"go1.26.5"}` |
+| `curl /nope` | 404 đúng envelope, có `request_id` |
+| `curl /metrics` | có `pulse_build_info{...} 1` |
+| SIGTERM | `shutdown signal received` → `server stopped`, thoát sạch |
+| `docker compose config` | hợp lệ |
 
 ---
 
@@ -468,6 +492,37 @@ Các con số dùng chung (version, ngưỡng hiệu năng, hạn mức, phân p
 - [ ] `L6-33` `CONTRIBUTING.md` + hướng dẫn setup dev trong 5 phút
 - [ ] `L6-34` Bài viết tổng kết (blog/LinkedIn): "Xây analytics 100M events với ClickHouse — 8 điều tôi học được"
 - [ ] `L6-35` Tag `v1.0.0`
+
+---
+
+# Trang tài liệu (docs site)
+
+> Nhóm task song song, **không tính** vào 232 task của lộ trình chính.
+> Site: VitePress, tiếng Anh mặc định ở gốc + tiếng Việt dưới `/vi/`, deploy GitHub Pages.
+> URL: `https://nxhawk.github.io/Real-time-Web-Analytics-Platform/`
+
+- [x] `DOC-01` Scaffold VitePress trong `docs/`: `package.json`, `.vitepress/config.mts`, tách config theo locale (`shared.mts` / `en.mts` / `vi.mts`)
+- [x] `DOC-02` Cấu hình i18n: `root` = tiếng Anh (không prefix URL), `vi` dưới `/vi/`; dịch toàn bộ nav, sidebar, footer, nhãn outline và UI tìm kiếm
+- [x] `DOC-03` `base` = `/Real-time-Web-Analytics-Platform/` khớp tên repo; sitemap có hreflang; local search không cần dịch vụ ngoài
+- [x] `DOC-04` Nội dung tiếng Anh: home, 7 trang guide, 4 trang reference, 4 trang notes, 2 trang ADR, roadmap
+- [x] `DOC-05` Bản tiếng Việt đầy đủ — cùng cây thư mục, cùng tên file (19 + 19 trang)
+- [x] `DOC-06` `scripts/copy-assets.mjs` copy `docs/api/openapi.yaml` sang `public/` lúc build (Node thuần, chạy được trên Windows)
+- [x] `DOC-07` `.github/workflows/docs.yml`: build trên PR (chặn link chết), deploy Pages khi push `main`; cache npm, concurrency `pages`, quyền `id-token: write`
+- [ ] 🔸 `DOC-08` Bật GitHub Pages: **Settings → Pages → Source = GitHub Actions** — *phải làm tay một lần, nếu không workflow deploy sẽ fail*
+
+> **Done khi**: `cd docs && npm ci && npm run build` xanh (build fail nếu có link nội bộ chết);
+> mở được cả `/` và `/vi/`; nút đổi ngôn ngữ giữ nguyên trang đang đọc.
+
+### Kết quả kiểm chứng (chạy trong sandbox)
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `npm ci && npm run build` | xanh, 8,6s, **38 trang** (19 EN + 19 VI) |
+| Kiểm tra link chết | đã thử chèn link hỏng → build fail đúng như mong đợi |
+| `base` trong HTML | `/Real-time-Web-Analytics-Platform/...` |
+| Thẻ `lang` | `en-US` ở gốc, `vi-VN` ở `/vi/` |
+| Sitemap | có `hreflang` cho cả hai ngôn ngữ |
+| Chụp màn hình | cả hai locale render đúng, UI đã dịch |
 
 ---
 

@@ -1,0 +1,89 @@
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: none
+  enable:
+    # Correctness
+    - errcheck        # unchecked errors
+    - govet           # the standard vet suite
+    - staticcheck     # includes gosimple and stylecheck in v2
+    - ineffassign     # assignments that are never used
+    - unused          # unused code
+    - bodyclose       # unclosed HTTP response bodies
+    - sqlclosecheck   # unclosed sql.Rows / sql.Stmt
+    - rowserrcheck    # missing rows.Err() check
+    - noctx           # HTTP requests without a context
+    - errorlint       # %v instead of %w, bad errors.Is/As usage
+    - nilerr          # returning nil after a non-nil error
+    - contextcheck    # a context that should have been passed through
+    # Security
+    - gosec
+    # Style and complexity
+    - gocritic
+    - revive
+    - misspell
+    - unconvert       # redundant type conversions
+    - unparam         # always-identical parameters
+    - wastedassign
+    - copyloopvar
+    - predeclared     # shadowing predeclared identifiers
+    - goconst         # repeated string literals worth a constant
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+      exclude-functions:
+        # A failed write to an already-broken HTTP connection is not actionable.
+        - (net/http.ResponseWriter).Write
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # readability wins over a few padding bytes here
+    gosec:
+      excludes:
+        - G104 # duplicate of errcheck
+    revive:
+      rules:
+        - name: exported
+          arguments: ["disableStutteringCheck"]
+        - name: package-comments
+        - name: indent-error-flow
+        - name: error-strings
+        - name: context-as-argument
+        - name: unreachable-code
+    gocritic:
+      enabled-tags: [diagnostic, style, performance]
+      disabled-checks:
+        - whyNoLint
+        - hugeParam
+    goconst:
+      min-len: 3
+      min-occurrences: 4
+
+  exclusions:
+    generated: lax
+    rules:
+      # Tests may use magic numbers, duplicate strings, and skip a few security rules.
+      - path: _test\.go
+        linters: [gosec, goconst, unparam, errcheck]
+      # Generated code is never linted.
+      - path: \.pb\.go
+        linters: [all]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/nxhawk/pulse-analytics/backend
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
