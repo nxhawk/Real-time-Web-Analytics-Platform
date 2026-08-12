@@ -1,8 +1,26 @@
 # Pulse Analytics — Deploy: Vercel (FE) + EC2 all-in-one (BE)
 
-> Bổ sung cho `PLAN.md` §17 và `TODO.md` L6.4 — thay thế phương án "VPS + docker compose".
+> **Thay thế** [`PLAN.md` §17.4–17.5](PLAN.md#174-cd-productionyml) và
+> [`TODO.md` L6.4](TODO.md#l64--cd--môi-trường-thật-7h--đường-vps) — bỏ phương án "1 VPS + SSH".
 > Region: **ap-southeast-1 (Singapore)** · Instance: **1 × r7g.xlarge** · IaC: **Terraform**
-> Phiên bản: 1.0 — 2026-08-11
+> Phiên bản: 1.1 — 2026-08-12
+
+---
+
+## Bản đồ tài liệu
+
+| File | Vai trò | Quan hệ với file này |
+|---|---|---|
+| [`README.md`](README.md) | Giới thiệu, quickstart | Tóm tắt phần deploy ở mục *Deployment* |
+| [`PLAN.md`](PLAN.md) | Đặc tả kỹ thuật | Tài liệu này **thay** §17.4–17.5 của nó |
+| [`PHASES.md`](PHASES.md) | Giai đoạn triển khai | Phase AWS: [`PHASES.md` §11](PHASES.md#11-phase-aws--hạ-tầng-production) |
+| [`TODO.md`](TODO.md) | Checklist thực thi | §17 dưới đây **thay** `L6-20`→`L6-28` |
+| **`DEPLOY-AWS.md`** (file này) | Hạ tầng production | Nguồn sự thật về *deploy* |
+
+**Điều kiện vào phase này:** đã xong L6.1 (metrics), L6.2 (logging), L6.3 (security).
+Deploy khi chưa nhìn thấy hệ thống là deploy mù.
+Các con số dùng chung với phần còn lại của dự án chốt tại
+[`PHASES.md` §2](PHASES.md#2-bảng-số-liệu-chuẩn).
 
 ---
 
@@ -1407,7 +1425,9 @@ aws s3 ls
 
 ## 17. Checklist thay thế L6.4
 
-> Thay cho `TODO.md` L6-20 → L6-28. Ước lượng: **14h**.
+> Thay cho [`TODO.md` L6-20 → L6-28](TODO.md#l64--cd--môi-trường-thật-7h--đường-vps) (9 task, 7h).
+> Ước lượng: **32 task / 14h**. Khi đi đường này, tổng dự án là **255 task / ~214h**.
+> Mục tiêu, điều kiện vào/ra và rủi ro của phase: [`PHASES.md` §11](PHASES.md#11-phase-aws--hạ-tầng-production).
 
 ### AWS.1 — Chuẩn bị tài khoản (2h)
 
@@ -1461,4 +1481,6 @@ aws s3 ls
 
 ---
 
-*Tài liệu này thay thế phần deploy trong `PLAN.md` §17.4–17.5 và `TODO.md` L6.4.*
+*Tài liệu này thay thế phần deploy trong [`PLAN.md` §17.4–17.5](PLAN.md#174-cd-productionyml) và
+[`TODO.md` L6.4](TODO.md#l64--cd--môi-trường-thật-7h--đường-vps).
+Thiết kế hệ thống: [`PLAN.md`](PLAN.md) · Giai đoạn & tiêu chí ra: [`PHASES.md`](PHASES.md).*

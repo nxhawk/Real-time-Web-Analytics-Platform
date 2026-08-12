@@ -2,7 +2,26 @@
 
 > Real-time Web Analytics Platform (Google Analytics thu nhỏ)
 > Go/Gin + ClickHouse + Kafka + Next.js
-> Phiên bản tài liệu: 1.0 — 2026-08-11
+> Phiên bản tài liệu: 1.1 — 2026-08-12
+
+---
+
+## Bản đồ tài liệu
+
+| File | Vai trò | Quan hệ với file này |
+|---|---|---|
+| [`README.md`](README.md) | Giới thiệu, quickstart, tổng quan API | Bản rút gọn tiếng Anh của tài liệu này |
+| **`PLAN.md`** (file này) | **Đặc tả kỹ thuật** — kiến trúc, schema, DDL, query, contract, ADR | Nguồn sự thật về *thiết kế* |
+| [`PHASES.md`](PHASES.md) | Giai đoạn triển khai: entry/exit, deliverable, rủi ro, số liệu chuẩn | Nguồn sự thật về *thứ tự và tiêu chí xong* |
+| [`TODO.md`](TODO.md) | Checklist từng task, ước lượng, "Done khi" | Nguồn sự thật về *tiến độ* |
+| [`DEPLOY-AWS.md`](DEPLOY-AWS.md) | Hạ tầng production: Vercel + EC2 + Terraform | **Thay thế** §17.4–17.5 của tài liệu này |
+| [`CLAUDE.md`](CLAUDE.md) | Quy ước cho AI coding agent | Ràng buộc khi sinh code |
+
+Thứ tự ưu tiên khi mâu thuẫn: **`DEPLOY-AWS.md` (phần deploy)** → **`PLAN.md`** →
+**`PHASES.md`** → **`TODO.md`** → code.
+Các con số xuất hiện ở nhiều file (version, ngưỡng hiệu năng, hạn mức API, phân phối dữ liệu
+seeder) được chốt tại [`PHASES.md` §2 — Bảng số liệu chuẩn](PHASES.md#2-bảng-số-liệu-chuẩn);
+sửa ở đó trước rồi mới lan sang các file khác.
 
 ---
 
@@ -63,7 +82,9 @@ Xây một analytics platform tự host, nhận event từ website/app, lưu và
 - Dashboard Next.js
 - Kafka pipeline (Level 4)
 - Data generator + benchmark suite
-- CI/CD với GitHub Actions + deploy Docker Compose lên 1 VPS
+- CI/CD với GitHub Actions + deploy Docker Compose lên **1 máy chủ duy nhất** — đường mặc định
+  là EC2 `r7g.xlarge` + Vercel theo [`DEPLOY-AWS.md`](DEPLOY-AWS.md); đường thay thế là 1 VPS
+  thường theo §17.4–17.5
 
 ### 1.4 Out of scope (giai đoạn này)
 
@@ -165,7 +186,7 @@ Xây một analytics platform tự host, nhận event từ website/app, lưu và
 | HTTP framework | Gin | v1.11+ | `gin-contrib/zap`, `gin-contrib/cors`, `gin-contrib/gzip` |
 | DB | ClickHouse | **26.3 LTS** (hoặc 26.7 stable) | Chạy single node; ghi chú path lên Replicated |
 | CH driver | `github.com/ClickHouse/clickhouse-go/v2` | v2.4x | Native protocol (port 9000), KHÔNG dùng HTTP cho insert |
-| Migration | `golang-migrate` hoặc `goose` | latest | goose dễ hơn cho ClickHouse multi-statement |
+| Migration | **`goose`** (đã chốt) | latest | Chọn goose thay `golang-migrate` vì hỗ trợ multi-statement ClickHouse tốt hơn |
 | Kafka | Apache Kafka (KRaft, no ZK) | 4.x | Hoặc Redpanda cho dev nhẹ hơn |
 | Kafka client Go | `github.com/twmb/franz-go` | latest | Nhanh, thuần Go, không cần cgo (khác confluent) |
 | Config | `caarlos0/env` + `.env` | | Đơn giản hơn viper |
@@ -184,7 +205,7 @@ Xây một analytics platform tự host, nhận event từ website/app, lưu và
 | Date | `date-fns` + `date-fns-tz` | | |
 | Test FE | Vitest + Testing Library + Playwright | | |
 | Container | Docker + Docker Compose v2 | | |
-| CI/CD | GitHub Actions + GHCR | | |
+| CI/CD | GitHub Actions | | GHCR cho image dev/CI; **ECR** cho production AWS ([`DEPLOY-AWS.md` §10](DEPLOY-AWS.md#10-cicd-github-actions--ecr--ssm)) |
 | Reverse proxy | Caddy (tự động TLS) hoặc Nginx | | Caddy đỡ việc hơn nhiều |
 | Load test | k6 (ingest) + custom Go generator (bulk seed) | | |
 | Dashboard hạ tầng | Prometheus + Grafana | | |
@@ -197,9 +218,13 @@ Monorepo — dễ CI, dễ đồng bộ contract.
 
 ```
 pulse-analytics/
-├── README.md
-├── PLAN.md
-├── TODO.md
+├── README.md                     # giới thiệu + quickstart (tiếng Anh)
+├── PLAN.md                       # tài liệu này — đặc tả kỹ thuật
+├── PHASES.md                     # giai đoạn triển khai, entry/exit, số liệu chuẩn
+├── TODO.md                       # checklist thực thi theo level
+├── DEPLOY-AWS.md                 # hạ tầng production Vercel + EC2
+├── CLAUDE.md                     # quy ước cho AI coding agent
+├── CONTRIBUTING.md
 ├── LICENSE
 ├── Makefile                      # entrypoint mọi lệnh dev
 ├── .env.example
@@ -263,9 +288,10 @@ pulse-analytics/
 │   │   ├── 0002_events.up.sql
 │   │   ├── 0003_mv_events_hourly.up.sql
 │   │   ├── 0004_mv_daily_users.up.sql
-│   │   ├── 0005_mv_sessions.up.sql
-│   │   ├── 0006_user_first_seen.up.sql
-│   │   └── 0007_projections_ttl.up.sql
+│   │   ├── 0005_mv_page_stats_hourly.up.sql   # tách riêng: page cardinality cao
+│   │   ├── 0006_mv_sessions.up.sql
+│   │   ├── 0007_user_first_seen.up.sql
+│   │   └── 0008_projections_ttl.up.sql
 │   └── test/
 │       ├── integration/
 │       └── testdata/
@@ -316,6 +342,9 @@ pulse-analytics/
 │   ├── prometheus/prometheus.yml
 │   └── scripts/deploy.sh
 │
+├── infra/                        # Terraform cho đường AWS — xem DEPLOY-AWS.md §4
+│   └── ...
+│
 ├── loadtest/
 │   ├── k6/ingest.js
 │   ├── k6/query.js
@@ -327,10 +356,13 @@ pulse-analytics/
 └── docs/
     ├── api/openapi.yaml
     ├── adr/0001-....md
-    ├── clickhouse-notes.md       # ghi chép học được
-    ├── benchmark-results.md
-    └── runbook.md
+    ├── clickhouse-notes.md       # ghi chép học được (L2, >= 20 mục)
+    ├── queries-ops.sql           # query "soi bảng" (L2)
+    ├── benchmark-results.md      # kết quả CH vs PG (L3)
+    └── runbook.md                # xử lý sự cố + RTO thực tế
 ```
+
+> Task tạo cây thư mục này là `L0-04`; task đưa toàn bộ tài liệu vào repo là `L0-06`.
 
 ---
 
@@ -1100,6 +1132,7 @@ Query params dùng chung: `from` (ISO date/datetime), `to`, `tz` (mặc định 
 | `GET` | `/analytics/devices` | `{items:[{name, users, events, pct}]}` |
 | `GET` | `/analytics/countries` | như trên |
 | `GET` | `/analytics/browsers` | như trên |
+| `GET` | `/analytics/os` | như trên |
 | `GET` | `/analytics/sources` | referrer + utm |
 | `GET` | `/analytics/funnel?steps=page_view,product_view,add_to_cart,checkout,purchase&window=3600` | `{steps:[{name, users, conv_from_prev, conv_from_first}]}` |
 | `GET` | `/analytics/retention?cohort=day&periods=30` | `{cohorts:[{date, size, values:[...]}]}` |
@@ -1356,6 +1389,12 @@ jobs:
 
 ### 17.4 `cd-production.yml`
 
+> **Lưu ý:** §17.4 và §17.5 mô tả đường "1 VPS + SSH + docker compose".
+> Đường triển khai **mặc định** của dự án là AWS (Vercel + EC2 + Terraform + ECR + SSM),
+> đặc tả tại [`DEPLOY-AWS.md`](DEPLOY-AWS.md) — tài liệu đó **thay thế** hai mục này.
+> Chọn một trong hai đường và đánh dấu đường còn lại là `[-]` trong `TODO.md`;
+> so sánh hai đường ở [`PHASES.md` §10](PHASES.md#10-phase-l6--observability-security-cd-docs).
+
 ```
 push tag v* / manual dispatch
         │
@@ -1380,8 +1419,11 @@ Quy tắc migration: **luôn tương thích ngược một bước** (add column
 |---|---|---|
 | `local` | docker compose, CH 1 node, Redpanda | seed 1M events |
 | `ci` | services trong GitHub Actions | fixture nhỏ |
-| `staging` | VPS 2vCPU/4GB | seed 10M |
-| `prod` | VPS 4vCPU/16GB, SSD | thật |
+| `staging` | VPS 2vCPU/4GB · **đường AWS: Vercel preview + dùng chung EC2** | seed 10M |
+| `prod` | VPS 4vCPU/16GB SSD · **đường AWS: EC2 `r7g.xlarge` 4vCPU/32GB + EBS gp3 500GB** | thật |
+
+> Đường AWS không dựng máy staging riêng để tiết kiệm chi phí: preview của Vercel trỏ về cùng
+> backend, phân biệt bằng CORS ([`DEPLOY-AWS.md` §12](DEPLOY-AWS.md#12-cors--authentication)).
 
 ---
 
@@ -1403,7 +1445,9 @@ Quy tắc migration: **luôn tương thích ngược một bước** (add column
 | L | 100.000.000 | thấy ClickHouse "bay" |
 | XL | 500.000.000 | tuỳ chọn, cần đĩa lớn |
 
-Generator (`cmd/seeder`): phân phối thực tế — Zipf cho page, 70/25/5 cho device, giờ cao điểm 20–22h, 5% purchase, session 1–15 event.
+Generator (`cmd/seeder`): phân phối thực tế — Zipf cho page, **device 62/35/3**, giờ cao điểm
+20–22h, session 1–15 event. Bảng phân phối đầy đủ (device, country, funnel, retention) chốt tại
+[`PHASES.md` §2.5](PHASES.md#25-phân-phối-dữ-liệu-của-seeder) và được `L3-02`…`L3-05` hiện thực.
 
 ### 18.3 Bảng kết quả cần điền
 
@@ -1430,23 +1474,35 @@ Generator (`cmd/seeder`): phân phối thực tế — Zipf cho page, 70/25/5 ch
 
 ## 19. Roadmap theo Level
 
-> Ước lượng theo giờ, giả định làm part-time. Tổng ~180–230 giờ.
+> Ước lượng theo giờ, giả định làm part-time. Tổng **~207 giờ** (232 task).
+> Chi tiết entry/exit criteria, deliverable và rủi ro từng level: [`PHASES.md`](PHASES.md).
+> Checklist từng task: [`TODO.md`](TODO.md).
 
-| Level | Nội dung | Ước lượng | Milestone / Demo được gì |
-|---|---|---|---|
-| **L0** | Init repo, Makefile, docker-compose (CH + api), CI lint/test, health endpoint | 12h | `make up` chạy được, CI xanh |
-| **L1** | Event schema, migration `events`, ingest 1 row/INSERT, 3 endpoint analytics cơ bản, dashboard tối giản | 30h | Gửi event từ curl → thấy số trên trang web |
-| **L2** | Học sâu ClickHouse: ORDER BY thử nghiệm, LowCardinality, codec, TTL, skip index, projection, `EXPLAIN` | 25h | `docs/clickhouse-notes.md` có số liệu so sánh thật |
-| **L3** | Batch writer + backpressure + WAL fallback, seeder 10M–100M, benchmark insert, benchmark query, so sánh PG | 35h | Bảng benchmark điền đầy đủ |
-| **L4** | Kafka: producer, consumer group, batch, retry, DLQ, tách 2 binary, consumer lag metric | 35h | Kill ClickHouse → ingest vẫn 202 → bật lại → data về đủ |
-| **L5** | MV (hourly/daily/sessions/first_seen), funnel, retention, cohort, revenue, realtime, dashboard đầy đủ | 45h | Dashboard giống mock, mọi query < 300ms ở 100M |
-| **L6** | Observability đầy đủ, security hardening, CD production, runbook, README + bài viết tổng kết | 25h | Deploy thật, có domain + TLS, có Grafana |
+| Level | Nội dung | Task | Ước lượng | Milestone / Demo được gì | Tag |
+|---|---|---|---|---|---|
+| **L0** | Init repo, Makefile, docker-compose (CH + api), CI lint/test, health endpoint | 25 | 12h | `make up` chạy được, CI xanh | — |
+| **L1** | Event schema, migration `events`, ingest 1 row/INSERT, 5 endpoint analytics cơ bản, dashboard tối giản | 40 | 30h | Gửi event từ curl → thấy số trên trang web | `v0.1.0` |
+| **L2** | Học sâu ClickHouse: ORDER BY thử nghiệm, LowCardinality, codec, TTL, skip index, projection, `EXPLAIN` | 24 | 25h | `docs/clickhouse-notes.md` có số liệu so sánh thật | — |
+| **L3** | Batch writer + backpressure + WAL fallback, seeder 10M–100M, benchmark insert, benchmark query, so sánh PG | 32 | 35h | Bảng benchmark điền đầy đủ | `v0.3.0` |
+| **L4** | Kafka: producer, consumer group, batch, retry, DLQ, tách 2 binary, consumer lag metric | 30 | 35h | Kill ClickHouse → ingest vẫn 202 → bật lại → data về đủ | `v0.4.0` |
+| **L5** | MV (hourly/daily/page_stats/sessions/first_seen), funnel, retention, cohort, revenue, realtime, dashboard đầy đủ | 46 | 45h | Dashboard giống mock, mọi query < 300ms ở 100M | — |
+| **L6** | Observability đầy đủ, security hardening, CD production, runbook, README + bài viết tổng kết | 35 | 25h | Deploy thật, có domain + TLS, có Grafana | `v1.0.0` |
+| | **Tổng** | **232** | **~207h** | | |
+| **AWS** | Terraform + EC2 + Vercel + ECR/SSM — **thay** L6.4 (`L6-20`→`L6-28`) | 32 | 14h | Hệ thống chạy trên domain thật, có backup đã diễn tập restore | — |
+| | **Tổng khi đi đường AWS** | **255** | **~214h** | | |
+
+L0–L3 xây kiến trúc Phase 1 (§2.1); L4–L6 chuyển sang Phase 2 (§2.2).
 
 ### Thứ tự ưu tiên nếu thiếu thời gian
 
-1. L0 → L1 → L3 (batch insert) → L5 (MV + funnel) — đây là phần "đắt giá" nhất về kiến thức.
-2. Kafka (L4) có thể lùi lại; nhưng nếu mục tiêu là event-driven thì đừng bỏ.
-3. Benchmark PG vs CH có thể làm gọn ở mức 10M nếu không đủ đĩa.
+1. L0 → L1 → L2 → L3 — đây là phần "đắt giá" nhất về kiến thức (storage + write path + benchmark).
+2. L5.1 (MV) + L5.2 (funnel) — chứng minh hiểu AggregatingMergeTree và analytical SQL.
+3. Kafka (L4) có thể lùi lại; nhưng nếu mục tiêu là event-driven thì đừng bỏ.
+4. Benchmark PG vs CH có thể làm gọn ở mức 10M nếu không đủ đĩa — nhớ ghi rõ mức dữ liệu.
+
+Không được rút gọn: golden test MV vs raw (`L5-03`), test "kill ClickHouse không mất event"
+(`L3-17`, `L4-23`), diễn tập restore backup (`L6-26` / `AWS-28`).
+Bảng đầy đủ: [`PHASES.md` §13](PHASES.md#13-đường-tắt-khi-thiếu-thời-gian).
 
 ---
 
@@ -1463,7 +1519,7 @@ Mỗi ADR một file trong `docs/adr/`, format: Context → Decision → Consequ
 | 0005 | At-least-once + dedup ở tầng query | Đơn giản hơn exactly-once, đủ chính xác cho analytics |
 | 0006 | AggregatingMergeTree + MV thay vì query raw | Dashboard phải < 300ms bất kể data lớn |
 | 0007 | Monorepo | Đồng bộ contract FE/BE, CI đơn giản |
-| 0008 | Docker Compose thay vì Kubernetes | 1 VPS, 1 người; k8s là chi phí vận hành không cần thiết |
+| 0008 | Docker Compose thay vì Kubernetes | 1 máy chủ, 1 người; k8s là chi phí vận hành không cần thiết. Máy chủ đó là EC2 `r7g.xlarge` theo [`DEPLOY-AWS.md`](DEPLOY-AWS.md) |
 | 0009 | Single-node ClickHouse, chưa Replicated | Giảm phức tạp; ghi rõ đường nâng cấp (Keeper + ReplicatedMergeTree) |
 | 0010 | Trả `202 Accepted` cho ingest | Ingest không được phụ thuộc độ sẵn sàng của storage |
 
@@ -1492,6 +1548,10 @@ Mỗi ADR một file trong `docs/adr/`, format: Context → Decision → Consequ
 
 ## 22. Definition of Done
 
+> Bản đối chiếu theo phase (tiêu chí nào thuộc trách nhiệm level nào) ở
+> [`PHASES.md` §14](PHASES.md#14-definition-of-done-toàn-dự-án).
+> Bản để tick ở [`TODO.md`](TODO.md#checklist-nghiệm-thu-cuối-copy-từ-plan-22).
+
 Project được coi là hoàn thành khi:
 
 - [ ] `git clone && make up` → toàn bộ hệ thống chạy trong < 5 phút trên máy sạch
@@ -1502,7 +1562,7 @@ Project được coi là hoàn thành khi:
 - [ ] Kill ClickHouse 5 phút → không mất event → bật lại thì số liệu khớp 100%
 - [ ] Golden test MV vs raw khớp tuyệt đối
 - [ ] CI xanh: lint, unit, integration, security scan, build image
-- [ ] CD deploy được lên VPS bằng 1 tag, có rollback
+- [ ] CD deploy được lên máy chủ production bằng 1 tag, có rollback và smoke test
 - [ ] Grafana có 4 dashboard, alert hoạt động
 - [ ] `docs/benchmark-results.md` điền đủ bảng PG vs CH kèm kết luận
 - [ ] `docs/clickhouse-notes.md` >= 20 ghi chú rút ra từ thực nghiệm (không copy tài liệu)
@@ -1510,4 +1570,6 @@ Project được coi là hoàn thành khi:
 
 ---
 
-*Tài liệu này là bản kế hoạch. Checklist thực thi nằm ở `TODO.md`.*
+*Tài liệu này là bản đặc tả thiết kế. Thứ tự triển khai và tiêu chí ra từng giai đoạn nằm ở
+[`PHASES.md`](PHASES.md); checklist thực thi ở [`TODO.md`](TODO.md); hạ tầng production ở
+[`DEPLOY-AWS.md`](DEPLOY-AWS.md).*

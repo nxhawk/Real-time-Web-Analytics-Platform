@@ -19,8 +19,9 @@ This applies to:
 - Test names and test failure messages
 - UI copy in the dashboard (user-facing i18n strings live in locale files, not inline)
 
-The planning documents `PLAN.md`, `TODO.md`, and `DEPLOY-AWS.md` are written in Vietnamese
-and stay that way — do not translate them unless explicitly asked. When implementing a task
+The planning documents `PLAN.md`, `PHASES.md`, `TODO.md`, and `DEPLOY-AWS.md` are written in
+Vietnamese and stay that way — do not translate them unless explicitly asked.
+`README.md` and this file are in English. When implementing a task
 described in Vietnamese, **translate the intent into English code and English comments.**
 
 ```go
@@ -37,18 +38,26 @@ Analytics). Go/Gin ingest and query APIs, ClickHouse storage, Kafka event pipeli
 dashboard.
 
 The repository is currently in the **design phase**: it contains specification documents but
-no implementation yet. Build features by following the level-by-level checklist in `TODO.md`.
+no implementation yet. Build features by following the phase plan in `PHASES.md` and the
+level-by-level checklist in `TODO.md`.
 
 ### Source of truth, in priority order
 
-1. `PLAN.md` — the technical specification. Architecture, schemas, DDL, API contract, and
+1. `DEPLOY-AWS.md` — deployment only (Vercel + a single EC2 host). It supersedes
+   `PLAN.md` §17.4–17.5 and `TODO.md` L6.4.
+2. `PLAN.md` — the technical specification. Architecture, schemas, DDL, API contract, and
    design decisions live here. If code and `PLAN.md` disagree, `PLAN.md` wins unless the user
    says otherwise.
-2. `TODO.md` — the execution order and acceptance criteria ("Done khi" = "Done when").
-3. `DEPLOY-AWS.md` — the deployment target (Vercel + a single EC2 host), which supersedes the
-   "VPS + docker compose" plan in `PLAN.md` §17.
-4. `docs/api/openapi.yaml` — the API contract once it exists. Frontend types are generated
+3. `PHASES.md` — delivery order, entry/exit criteria per phase, and **§2 "Bảng số liệu chuẩn"**,
+   the canonical table for any number that appears in more than one document (tool versions,
+   performance thresholds, API limits, seeder distributions). Change a shared number there
+   first, then propagate.
+4. `TODO.md` — the task list and acceptance criteria ("Done khi" = "Done when").
+5. `docs/api/openapi.yaml` — the API contract once it exists. Frontend types are generated
    from it; never hand-edit generated types.
+
+When a task's implementation reveals that a document is wrong, fix the document in the same
+pull request. Never leave code that silently disagrees with the spec.
 
 ---
 

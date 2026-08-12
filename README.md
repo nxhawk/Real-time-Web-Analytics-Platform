@@ -8,13 +8,38 @@ and serves a real-time dashboard: overview metrics, time series, top pages, devi
 breakdowns, funnels, and retention cohorts.
 
 > **Status:** design phase. The repository currently contains the specification documents
-> ([`PLAN.md`](PLAN.md), [`TODO.md`](TODO.md), [`DEPLOY-AWS.md`](DEPLOY-AWS.md)).
-> Implementation follows the level-by-level roadmap in `TODO.md`.
+> ([`PLAN.md`](PLAN.md), [`PHASES.md`](PHASES.md), [`TODO.md`](TODO.md),
+> [`DEPLOY-AWS.md`](DEPLOY-AWS.md)).
+> Implementation follows the phase-by-phase plan in `PHASES.md` and the task checklist in
+> `TODO.md`.
+
+---
+
+## Document map
+
+| Document | Role | Read it when |
+|---|---|---|
+| `README.md` (this file) | Overview, quick start, API summary | You are new to the repository |
+| [`PLAN.md`](PLAN.md) | **Technical specification** — architecture, schema, DDL, queries, contract, ADRs | Before implementing anything |
+| [`PHASES.md`](PHASES.md) | **Delivery phases** — order, entry/exit criteria, deliverables, risks | At the start of each phase and at review time |
+| [`TODO.md`](TODO.md) | **Execution checklist** — task IDs, estimates, acceptance criteria | Day to day |
+| [`DEPLOY-AWS.md`](DEPLOY-AWS.md) | Production infrastructure: Vercel + EC2 + Terraform | During the AWS phase (replaces L6.4) |
+| [`CLAUDE.md`](CLAUDE.md) | Conventions for AI coding agents | When using an agent to generate code |
+
+Precedence when documents disagree: **`DEPLOY-AWS.md` (deployment only)** → **`PLAN.md`** →
+**`PHASES.md`** → **`TODO.md`** → code. Canonical values for anything that appears in more than
+one document — versions, performance thresholds, API limits, seeder distributions — live in
+[`PHASES.md` §2](PHASES.md#2-bảng-số-liệu-chuẩn); change them there first.
+
+The planning documents (`PLAN.md`, `PHASES.md`, `TODO.md`, `DEPLOY-AWS.md`) are written in
+Vietnamese by design; `README.md`, `CLAUDE.md`, and everything in the codebase are in English.
+See [`CLAUDE.md`](CLAUDE.md).
 
 ---
 
 ## Table of contents
 
+- [Document map](#document-map)
 - [Why this project](#why-this-project)
 - [Architecture](#architecture)
 - [Tech stack](#tech-stack)
@@ -134,7 +159,7 @@ Two goals, in order of importance:
 | HTTP framework | Gin | v1.11+ | zap/cors/gzip contribs |
 | Database | ClickHouse | 26.3 LTS | Single node; replication is a documented future path |
 | ClickHouse driver | `ClickHouse/clickhouse-go/v2` | v2.4x | Native protocol (port 9000) — never HTTP for inserts |
-| Migrations | goose | latest | Better multi-statement support for ClickHouse |
+| Migrations | goose | latest | Chosen over golang-migrate for multi-statement ClickHouse support |
 | Streaming | Apache Kafka (KRaft) | 4.x | Redpanda is an acceptable lighter dev substitute |
 | Kafka client | `twmb/franz-go` | latest | Pure Go, no cgo |
 | Config | `caarlos0/env` + `.env` | | |
@@ -148,10 +173,10 @@ Two goals, in order of importance:
 | Frontend language | TypeScript 5.x (strict) | | |
 | UI | TailwindCSS 4 + shadcn/ui | | |
 | Charts | Recharts / Apache ECharts | | ECharts for series above 5k points |
-| Data fetching | TanStack Query v5 | | 10s polling for realtime |
+| Data fetching | TanStack Query v5 | | 10s polling on report pages, 5s on `/realtime` |
 | Frontend tests | Vitest + Testing Library + Playwright | | |
 | Containers | Docker + Docker Compose v2 | | |
-| CI/CD | GitHub Actions + GHCR/ECR | | |
+| CI/CD | GitHub Actions | | GHCR for dev/CI images, ECR for the AWS production path |
 | Reverse proxy | Caddy | | Automatic TLS |
 | Load testing | k6 + custom Go seeder | | |
 | Monitoring | Prometheus + Grafana | | |
@@ -178,12 +203,21 @@ pulse-analytics/
 ├── frontend/             # Next.js dashboard
 ├── sdk/js/               # pulse.js tracking snippet (~2 KB)
 ├── deploy/               # caddy, clickhouse, kafka, grafana, prometheus
+├── infra/                # Terraform for the AWS production path
 ├── loadtest/             # k6 scripts + ClickHouse vs PostgreSQL benchmark
 ├── docs/                 # openapi.yaml, ADRs, notes, runbook
+├── docker-compose.yml           # dev: clickhouse + kafka + api + web
+├── docker-compose.prod.yml
+├── docker-compose.bench.yml     # adds PostgreSQL for the benchmark suite
 ├── PLAN.md               # full technical specification
+├── PHASES.md             # phase-by-phase delivery plan (entry/exit criteria)
 ├── TODO.md               # execution checklist by level
-└── DEPLOY-AWS.md         # Vercel + EC2 deployment guide
+├── DEPLOY-AWS.md         # Vercel + EC2 deployment guide
+└── CLAUDE.md             # conventions for AI coding agents
 ```
+
+The full tree, including every `internal/` package and migration file, is in
+[`PLAN.md` §4](PLAN.md#4-cấu-trúc-repository).
 
 ---
 
@@ -275,14 +309,15 @@ Base path: `/api/v1`. All responses are JSON.
 
 ### Analytics
 
-Shared query params: `from`, `to`, `tz`, `filter[device]`, `filter[country]`, `filter[page]`, `filter[event]`.
+Shared query params: `from`, `to`, `tz` (default `Asia/Ho_Chi_Minh`; data is stored in UTC),
+`filter[device]`, `filter[country]`, `filter[page]`, `filter[event]`.
 
 | Method | Path | Returns |
 |---|---|---|
 | `GET` | `/analytics/overview` | users, sessions, events, pageviews, revenue, bounce rate, deltas |
 | `GET` | `/analytics/timeseries` | `{series:[{ts, value}], interval}` |
 | `GET` | `/analytics/pages` | Top pages with views, users, average time |
-| `GET` | `/analytics/devices` \| `/countries` \| `/browsers` \| `/sources` | Breakdown tables |
+| `GET` | `/analytics/devices` \| `/countries` \| `/browsers` \| `/os` \| `/sources` | Breakdown tables |
 | `GET` | `/analytics/funnel` | Step conversion via `windowFunnel` |
 | `GET` | `/analytics/retention` | Cohort retention matrix |
 | `GET` | `/analytics/realtime` | Active users, last-5-minute events, top pages |
@@ -356,23 +391,28 @@ the whole batch.
 stored), User-Agent → device/OS/browser, session stitching via a 30-minute window, and an
 `ingested_at` timestamp for end-to-end latency measurement.
 
-See [`PLAN.md` §5](PLAN.md) for the complete validation rules.
+See [`PLAN.md` §5.2](PLAN.md#52-quy-tắc-validate) for the complete validation rules.
 
 ---
 
 ## Roadmap
 
-| Level | Scope | Tasks | Estimate |
-|---|---|---|---|
-| **L0** | Bootstrap: repo conventions, skeleton, Docker, Makefile, CI | 25 | 12h |
-| **L1** | MVP: ingest → query → dashboard | 40 | 30h |
-| **L2** | ClickHouse deep dive: codecs, skip indexes, MVs, projections | 24 | 25h |
-| **L3** | Batch insert, seeder, ClickHouse vs PostgreSQL benchmark | 32 | 35h |
-| **L4** | Kafka pipeline: producer, consumer group, DLQ, split binaries | 30 | 35h |
-| **L5** | Advanced analytics + full dashboard: funnel, retention, realtime | 46 | 45h |
-| **L6** | Observability, security, CD, documentation | 35 | 25h |
-| | **Total** | **232** | **~207h** |
+| Level | Scope | Tasks | Estimate | Tag |
+|---|---|---|---|---|
+| **L0** | Bootstrap: repo conventions, skeleton, Docker, Makefile, CI | 25 | 12h | — |
+| **L1** | MVP: ingest → query → dashboard | 40 | 30h | `v0.1.0` |
+| **L2** | ClickHouse deep dive: codecs, skip indexes, TTL, projections | 24 | 25h | — |
+| **L3** | Batch insert, seeder, ClickHouse vs PostgreSQL benchmark | 32 | 35h | `v0.3.0` |
+| **L4** | Kafka pipeline: producer, consumer group, DLQ, split binaries | 30 | 35h | `v0.4.0` |
+| **L5** | Advanced analytics + full dashboard: MVs, funnel, retention, realtime | 46 | 45h | — |
+| **L6** | Observability, security, CD, documentation | 35 | 25h | `v1.0.0` |
+| | **Total** | **232** | **~207h** | |
+| **AWS** | Production infrastructure — replaces L6.4 | 32 | 14h | — |
+| | **Total on the AWS path** | **255** | **~214h** | |
 
+Levels L0–L3 build the Phase 1 monolith; L4–L6 build the Phase 2 event pipeline.
+
+Entry/exit criteria, deliverables, and per-phase risks are in [`PHASES.md`](PHASES.md).
 Task-level detail, acceptance criteria, and progress live in [`TODO.md`](TODO.md).
 
 ---
@@ -385,7 +425,13 @@ Terraform, fronted by Caddy for automatic TLS, with EBS gp3 storage and DLM snap
 
 Full instructions — Terraform modules, cloud-init bootstrap, RAM allocation, ClickHouse and
 Kafka tuning for a single host, CI/CD through ECR and SSM, backup/restore, cost monitoring,
-and teardown — are in [`DEPLOY-AWS.md`](DEPLOY-AWS.md).
+and teardown — are in [`DEPLOY-AWS.md`](DEPLOY-AWS.md). Estimated running cost is ~$267/month
+in `ap-southeast-1`; see [`DEPLOY-AWS.md` §14](DEPLOY-AWS.md#14-giám-sát-chi-phí).
+
+This supersedes the "single VPS + docker compose" path described in
+[`PLAN.md` §17.4–17.5](PLAN.md#174-cd-productionyml). Pick one of the two and mark the other as
+intentionally skipped in `TODO.md` — see
+[`PHASES.md` §11](PHASES.md#11-phase-aws--hạ-tầng-production).
 
 ---
 
@@ -394,11 +440,15 @@ and teardown — are in [`DEPLOY-AWS.md`](DEPLOY-AWS.md).
 | Document | Contents |
 |---|---|
 | [`PLAN.md`](PLAN.md) | Full specification: architecture, schema, ClickHouse design, MVs, query cookbook, backend/frontend design, testing, CI/CD, benchmarks, ADRs |
+| [`PHASES.md`](PHASES.md) | Phase-by-phase delivery plan: entry/exit criteria, deliverables, metrics to record, risks, traceability matrix, canonical numbers |
 | [`TODO.md`](TODO.md) | Execution checklist by level, with estimates and acceptance criteria |
 | [`DEPLOY-AWS.md`](DEPLOY-AWS.md) | Vercel + EC2 deployment guide |
 | [`CLAUDE.md`](CLAUDE.md) | Working conventions for AI coding agents in this repository |
 | `docs/api/openapi.yaml` | API contract — the single source of truth |
-| `docs/adr/` | Architecture Decision Records |
+| `docs/adr/` | Architecture Decision Records (10 planned) |
+| `docs/clickhouse-notes.md` | Experiment log from L2 — ≥ 20 observations with real numbers |
+| `docs/benchmark-results.md` | ClickHouse vs PostgreSQL results from L3 |
+| `docs/runbook.md` | Incident playbook and operational numbers (RTO, deploy time) |
 
 ---
 

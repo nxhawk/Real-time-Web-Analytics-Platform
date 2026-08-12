@@ -1,36 +1,56 @@
 # Pulse Analytics — TODO / Checklist thực thi
 
-> Đi kèm `PLAN.md`. Mỗi task có **ID**, **ước lượng (h)**, và **Done khi** (tiêu chí nghiệm thu).
+> Đi kèm [`PLAN.md`](PLAN.md) (thiết kế) và [`PHASES.md`](PHASES.md) (thứ tự + tiêu chí ra).
+> Mỗi task có **ID**, **ước lượng (h)**, và **Done khi** (tiêu chí nghiệm thu).
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong · `[-]` bỏ qua có chủ ý.
-> Ước lượng tổng: **~205 giờ**.
+> Ước lượng tổng: **~207 giờ** (232 task) — hoặc **~214 giờ** (255 task) khi đi đường AWS.
+
+---
+
+## Bản đồ tài liệu
+
+| File | Dùng để | |
+|---|---|---|
+| [`README.md`](README.md) | Giới thiệu + quickstart | tiếng Anh |
+| [`PLAN.md`](PLAN.md) | Tra thiết kế trước khi code một task | tiếng Việt |
+| [`PHASES.md`](PHASES.md) | Xem entry/exit criteria, deliverable, rủi ro của cả level | tiếng Việt |
+| **`TODO.md`** (file này) | Tick từng task hằng ngày | tiếng Việt |
+| [`DEPLOY-AWS.md`](DEPLOY-AWS.md) | Checklist `AWS-01`→`AWS-32` thay cho L6.4 | tiếng Việt |
+
+Các con số dùng chung (version, ngưỡng hiệu năng, hạn mức, phân phối seeder) chốt tại
+[`PHASES.md` §2](PHASES.md#2-bảng-số-liệu-chuẩn).
 
 ---
 
 ## Bảng tiến độ
 
-| Level | Tên | Task | Ước lượng | Trạng thái |
-|---|---|---|---|---|
-| L0 | Khởi tạo & nền tảng | 25 | 12h | ☐ |
-| L1 | MVP ingest → query → dashboard | 40 | 30h | ☐ |
-| L2 | Đào sâu ClickHouse | 24 | 25h | ☐ |
-| L3 | Batch insert, seeder, benchmark | 32 | 35h | ☐ |
-| L4 | Kafka pipeline | 30 | 35h | ☐ |
-| L5 | Analytics nâng cao + dashboard đầy đủ | 46 | 45h | ☐ |
-| L6 | Observability, security, CD, docs | 35 | 25h | ☐ |
-| **Tổng** | | **232** | **~207h** | |
+| Level | Tên | Task | Ước lượng | Chi tiết phase | Trạng thái |
+|---|---|---|---|---|---|
+| L0 | Khởi tạo & nền tảng | 25 | 12h | [PHASES §4](PHASES.md#4-phase-l0--khởi-tạo--nền-tảng) | ☐ |
+| L1 | MVP ingest → query → dashboard | 40 | 30h | [PHASES §5](PHASES.md#5-phase-l1--mvp-ingest--query--dashboard) | ☐ |
+| L2 | Đào sâu ClickHouse | 24 | 25h | [PHASES §6](PHASES.md#6-phase-l2--đào-sâu-clickhouse) | ☐ |
+| L3 | Batch insert, seeder, benchmark | 32 | 35h | [PHASES §7](PHASES.md#7-phase-l3--batch-insert-seeder-benchmark) | ☐ |
+| L4 | Kafka pipeline | 30 | 35h | [PHASES §8](PHASES.md#8-phase-l4--kafka-pipeline) | ☐ |
+| L5 | Analytics nâng cao + dashboard đầy đủ | 46 | 45h | [PHASES §9](PHASES.md#9-phase-l5--analytics-nâng-cao--dashboard-đầy-đủ) | ☐ |
+| L6 | Observability, security, CD, docs | 35 | 25h | [PHASES §10](PHASES.md#10-phase-l6--observability-security-cd-docs) | ☐ |
+| **Tổng** | | **232** | **~207h** | | |
+| AWS | Hạ tầng production — **thay** L6.4 (`L6-20`→`L6-28`) | 32 | 14h | [PHASES §11](PHASES.md#11-phase-aws--hạ-tầng-production) · [DEPLOY-AWS §17](DEPLOY-AWS.md#17-checklist-thay-thế-l64) | ☐ |
+| **Tổng (đường AWS)** | | **255** | **~214h** | | |
 
 ---
 
 # LEVEL 0 — Khởi tạo & nền tảng (12h)
+
+> Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §4](PHASES.md#4-phase-l0--khởi-tạo--nền-tảng).
 
 ## L0.1 — Repository & quy ước (2h)
 
 - [ ] `L0-01` Tạo repo `pulse-analytics` trên GitHub, private hoặc public, thêm `LICENSE` (MIT)
 - [ ] `L0-02` `.gitignore` (Go, Node, `.env`, `*.log`, `data/`, `bin/`, `coverage.out`, `.DS_Store`)
 - [ ] `L0-03` `.editorconfig` (LF, utf-8, go=tab, ts=2 space)
-- [ ] `L0-04` Tạo cấu trúc thư mục theo `PLAN.md` §4 (kèm `.gitkeep` cho thư mục rỗng)
+- [ ] `L0-04` Tạo cấu trúc thư mục theo [`PLAN.md` §4](PLAN.md#4-cấu-trúc-repository), kể cả `infra/` (kèm `.gitkeep` cho thư mục rỗng)
 - [ ] `L0-05` `README.md` khung: mô tả 3 dòng, sơ đồ kiến trúc ASCII, quickstart, badge CI
-- [ ] `L0-06` Copy `PLAN.md` + `TODO.md` vào repo
+- [ ] `L0-06` Đưa toàn bộ tài liệu vào repo: `PLAN.md`, `PHASES.md`, `TODO.md`, `DEPLOY-AWS.md`, `CLAUDE.md`
 - [ ] `L0-07` Bật branch protection cho `main`: yêu cầu PR + CI pass + không force-push
 - [ ] `L0-08` Thêm `.github/pull_request_template.md` và `CODEOWNERS`
 - [ ] `L0-09` Quy ước commit: Conventional Commits; cài `commitlint` hoặc chỉ ghi rõ trong CONTRIBUTING
@@ -72,6 +92,8 @@
 
 # LEVEL 1 — MVP: ingest → query → dashboard (30h)
 
+> Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §5](PHASES.md#5-phase-l1--mvp-ingest--query--dashboard).
+
 ## L1.1 — Model & validation (4h)
 
 - [ ] `L1-01` `internal/model/event.go`: struct `Event`, `IngestRequest`, `RejectedEvent{Index, Reason}`
@@ -84,7 +106,7 @@
 
 ## L1.2 — Migration & bảng `events` (5h)
 
-- [ ] `L1-06` Chọn công cụ migration (goose khuyến nghị vì hỗ trợ multi-statement ClickHouse tốt hơn)
+- [ ] `L1-06` Cài **goose** (đã chốt ở [`PLAN.md` §3](PLAN.md#3-tech-stack--version) — hỗ trợ multi-statement ClickHouse tốt hơn `golang-migrate`)
 - [ ] `L1-07` `cmd/migrate/main.go`: `up`, `down`, `status`, `create <name>`; đọc DSN từ env; chạy được cả trong container
 - [ ] `L1-08` `0001_create_database.sql`
 - [ ] `L1-09` `0002_events.sql` — nguyên văn DDL ở PLAN §6.1 (bản tối giản trước: chưa codec/skip index)
@@ -149,6 +171,9 @@
 
 # LEVEL 2 — Đào sâu ClickHouse (25h)
 
+> Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §6](PHASES.md#6-phase-l2--đào-sâu-clickhouse).
+> **Điều kiện vào:** cần >= 10M event — nếu chưa có, làm `L3-01`…`L3-07` (seeder) trước.
+
 > Level này ít code, nhiều thực nghiệm. Mọi kết luận ghi vào `docs/clickhouse-notes.md` **kèm số liệu đo được**.
 
 ## L2.1 — Hiểu storage (5h)
@@ -202,10 +227,12 @@
 
 # LEVEL 3 — Batch insert, seeder, benchmark (35h)
 
+> Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §7](PHASES.md#7-phase-l3--batch-insert-seeder-benchmark).
+
 ## L3.1 — Seeder (6h)
 
 - [ ] `L3-01` `cmd/seeder/main.go`: flags `-n`, `-days`, `-sites`, `-workers`, `-batch`, `-out=clickhouse|ndjson|http`
-- [ ] `L3-02` Phân phối thực tế: Zipf cho page (~500 page), device 62/35/3, country top-10 + đuôi dài, giờ cao điểm 20–22h, cuối tuần thấp hơn 30%
+- [ ] `L3-02` Phân phối thực tế theo [`PHASES.md` §2.5](PHASES.md#25-phân-phối-dữ-liệu-của-seeder): Zipf cho page (~500 page), device 62/35/3, country top-10 + đuôi dài, giờ cao điểm 20–22h, cuối tuần thấp hơn 30%
 - [ ] `L3-03` Mô hình session: mỗi user 1–5 session/ngày, mỗi session 1–15 event, chuỗi event hợp lệ để funnel có ý nghĩa
 - [ ] `L3-04` Tỉ lệ chuyển đổi cài sẵn: view→product 72%, →cart 29%, →checkout 38%, →purchase 65% (để kiểm chứng funnel query)
 - [ ] `L3-05` Cohort: 30% user quay lại D1, 12% D7, 5% D30 (để kiểm chứng retention query)
@@ -259,6 +286,9 @@
 
 # LEVEL 4 — Kafka pipeline (35h)
 
+> Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §8](PHASES.md#8-phase-l4--kafka-pipeline).
+> Đây là mốc chuyển từ kiến trúc Phase 1 sang Phase 2 ([`PLAN.md` §2.2](PLAN.md#22-phase-2--event-pipeline-với-kafka-level-4)).
+
 ## L4.1 — Hạ tầng Kafka (4h)
 
 - [ ] `L4-01` Thêm Kafka (KRaft mode, không ZooKeeper) hoặc Redpanda vào `docker-compose.yml` + healthcheck
@@ -308,15 +338,18 @@
 
 # LEVEL 5 — Analytics nâng cao + dashboard đầy đủ (45h)
 
+> Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §9](PHASES.md#9-phase-l5--analytics-nâng-cao--dashboard-đầy-đủ).
+> **Điều kiện vào:** đã có 100M event trong ClickHouse để đo ngưỡng < 300ms.
+
 ## L5.1 — Materialized Views (10h)
 
-- [ ] `L5-01` Migration `events_hourly` + `mv_events_hourly` (PLAN §7.2)
+- [ ] `L5-01` Migration `0003_mv_events_hourly` — bảng `events_hourly` + MV ([`PLAN.md` §7.2](PLAN.md#72-events_hourly))
 - [ ] `L5-02` Script backfill an toàn (chạy theo từng tháng để không OOM), có `--dry-run`
 - [ ] `L5-03` **Golden test**: insert 50k event cố định → so sánh từng metric giữa raw và MV, phải khớp tuyệt đối
-- [ ] `L5-04` Migration `events_daily` + MV (DAU/WAU/MAU)
-- [ ] `L5-05` Migration `page_stats_hourly` + MV (tách riêng vì `page` cardinality cao)
-- [ ] `L5-06` Migration `sessions` + MV với `argMinState/argMaxState` (entry/exit page)
-- [ ] `L5-07` Migration `user_first_seen` + MV (cohort)
+- [ ] `L5-04` Migration `0004_mv_daily_users` — `events_daily` + MV, DAU/WAU/MAU ([`PLAN.md` §7.3](PLAN.md#73-events_daily-dauwaumau))
+- [ ] `L5-05` Migration `0005_mv_page_stats_hourly` — tách riêng vì `page` cardinality cao
+- [ ] `L5-06` Migration `0006_mv_sessions` — MV với `argMinState`/`argMaxState` cho entry/exit page ([`PLAN.md` §7.4](PLAN.md#74-sessions))
+- [ ] `L5-07` Migration `0007_user_first_seen` + MV cho cohort ([`PLAN.md` §7.5](PLAN.md#75-user_first_seen-cohort))
 - [ ] `L5-08` Đổi các endpoint analytics sang đọc MV; giữ cờ `USE_MV=false` để so sánh
 - [ ] `L5-09` Đo lại tốc độ: overview/timeseries/pages trước và sau MV ở 100M → ghi vào docs
 - [ ] `L5-10` Kiểm tra kích thước MV so với raw; nếu > 15% raw thì xem lại cardinality GROUP BY
@@ -378,6 +411,9 @@
 
 # LEVEL 6 — Observability, security, CD, docs (25h)
 
+> Mục tiêu, điều kiện vào/ra, deliverable và rủi ro: [`PHASES.md` §10](PHASES.md#10-phase-l6--observability-security-cd-docs).
+> L6.4 có hai đường: VPS (mục dưới, 7h) hoặc AWS ([`DEPLOY-AWS.md` §17](DEPLOY-AWS.md#17-checklist-thay-thế-l64), 14h). Chọn một, đường còn lại đánh dấu `[-]`.
+
 ## L6.1 — Metrics & Grafana (6h)
 
 - [ ] `L6-01` `internal/metrics/metrics.go`: đăng ký toàn bộ metric ở PLAN §14.1
@@ -406,9 +442,14 @@
 - [ ] `L6-18` API key: lưu hash (không lưu plaintext), hỗ trợ rotate, có `revoked_at`
 - [ ] `L6-19` Endpoint xoá dữ liệu theo user (`ALTER TABLE ... DELETE WHERE user_id=`), ghi rõ trong runbook là thao tác nặng
 
-## L6.4 — CD & môi trường thật (7h)
+## L6.4 — CD & môi trường thật (7h) · *đường VPS*
 
-- [ ] `L6-20` Thuê/chuẩn bị VPS (khuyến nghị >= 4 vCPU / 16GB / SSD 200GB cho 100M events)
+> **Rẽ nhánh.** Nhóm task này là đường "1 VPS + SSH + docker compose".
+> Đường mặc định của dự án là AWS: bỏ qua `L6-20`→`L6-28` (đánh dấu `[-]`) và làm
+> `AWS-01`→`AWS-32` ở [`DEPLOY-AWS.md` §17](DEPLOY-AWS.md#17-checklist-thay-thế-l64) (14h).
+> So sánh hai đường: [`PHASES.md` §10](PHASES.md#10-phase-l6--observability-security-cd-docs).
+
+- [ ] `L6-20` Thuê/chuẩn bị VPS (>= 4 vCPU / 16GB / SSD 200GB cho 100M events) — *đường AWS dùng EC2 `r7g.xlarge` 4 vCPU / 32GB + EBS gp3 500GB thay cho task này*
 - [ ] `L6-21` `docker-compose.prod.yml`: image từ GHCR theo tag sha, restart policy, resource limits, log rotation
 - [ ] `L6-22` `deploy/caddy/Caddyfile`: TLS tự động, reverse proxy `/api` → analytics-api, `/` → web, `/collect` → ingest-api
 - [ ] `L6-23` `cd-staging.yml`: tự deploy khi merge `main`
@@ -431,6 +472,8 @@
 ---
 
 # Backlog / Ý tưởng mở rộng (không bắt buộc)
+
+> Không tính vào 232 task của lộ trình chính.
 
 - [ ] `X-01` ReplicatedMergeTree + ClickHouse Keeper (2 node) — học replication
 - [ ] `X-02` Distributed table + sharding theo `site_id`
@@ -462,6 +505,9 @@
 
 # Checklist nghiệm thu cuối (copy từ PLAN §22)
 
+> Bản gốc: [`PLAN.md` §22](PLAN.md#22-definition-of-done).
+> Bản đối chiếu theo phase (tiêu chí nào thuộc level nào): [`PHASES.md` §14](PHASES.md#14-definition-of-done-toàn-dự-án).
+
 - [ ] `git clone && make up` chạy được trong < 5 phút trên máy sạch
 - [ ] `make seed N=10000000` thành công
 - [ ] Dashboard đủ 7 nhóm widget, dữ liệu thật
@@ -470,8 +516,12 @@
 - [ ] Kill ClickHouse 5 phút → không mất event → số liệu khớp 100%
 - [ ] Golden test MV vs raw khớp tuyệt đối
 - [ ] CI xanh đủ: lint, unit, integration, security, build
-- [ ] CD deploy bằng 1 tag, có rollback, có smoke test
+- [ ] CD deploy bằng 1 tag, có rollback (đã thử thật), có smoke test
 - [ ] Grafana 4 dashboard + alert hoạt động
 - [ ] `docs/benchmark-results.md` đầy đủ bảng + kết luận
 - [ ] `docs/clickhouse-notes.md` >= 20 ghi chú thực nghiệm
 - [ ] README hoàn chỉnh có ảnh + phần "những gì tôi học được"
+
+---
+
+*Thiết kế chi tiết: [`PLAN.md`](PLAN.md) · Giai đoạn & tiêu chí ra: [`PHASES.md`](PHASES.md) · Hạ tầng production: [`DEPLOY-AWS.md`](DEPLOY-AWS.md)*
