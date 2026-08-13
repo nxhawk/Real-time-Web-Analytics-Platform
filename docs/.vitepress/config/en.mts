@@ -12,6 +12,7 @@ export const en = defineConfig({
     nav: nav(),
     sidebar: {
       '/guide/': { base: '/guide/', items: guideSidebar() },
+      '/knowledge/': { base: '/knowledge/', items: knowledgeSidebar() },
       '/reference/': { base: '/reference/', items: referenceSidebar() },
       '/notes/': { base: '/notes/', items: notesSidebar() },
       '/adr/': { base: '/adr/', items: adrSidebar() },
@@ -40,6 +41,7 @@ export const en = defineConfig({
 function nav(): DefaultTheme.NavItem[] {
   return [
     { text: 'Guide', link: '/guide/introduction', activeMatch: '/guide/' },
+    { text: 'Knowledge', link: '/knowledge/', activeMatch: '/knowledge/' },
     { text: 'Reference', link: '/reference/api', activeMatch: '/reference/' },
     { text: 'Notes', link: '/notes/', activeMatch: '/notes/' },
     { text: 'ADR', link: '/adr/', activeMatch: '/adr/' },
@@ -82,6 +84,18 @@ function guideSidebar(): DefaultTheme.SidebarItem[] {
         { text: 'Contributing', link: 'contributing' },
         { text: 'Deploy configuration', link: 'deploy-config' },
         { text: 'Deployment', link: 'deployment' },
+      ],
+    },
+  ]
+}
+
+function knowledgeSidebar(): DefaultTheme.SidebarItem[] {
+  return [
+    {
+      text: 'Knowledge base',
+      items: [
+        { text: 'Overview', link: '/knowledge/' },
+        { text: 'ClickHouse explained', link: 'clickhouse' },
       ],
     },
   ]

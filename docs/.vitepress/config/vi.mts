@@ -12,6 +12,7 @@ export const vi = defineConfig({
     nav: nav(),
     sidebar: {
       '/vi/guide/': { base: '/vi/guide/', items: guideSidebar() },
+      '/vi/knowledge/': { base: '/vi/knowledge/', items: knowledgeSidebar() },
       '/vi/reference/': { base: '/vi/reference/', items: referenceSidebar() },
       '/vi/notes/': { base: '/vi/notes/', items: notesSidebar() },
       '/vi/adr/': { base: '/vi/adr/', items: adrSidebar() },
@@ -42,6 +43,7 @@ export const vi = defineConfig({
 function nav(): DefaultTheme.NavItem[] {
   return [
     { text: 'Hướng dẫn', link: '/vi/guide/introduction', activeMatch: '/vi/guide/' },
+    { text: 'Kiến thức', link: '/vi/knowledge/', activeMatch: '/vi/knowledge/' },
     { text: 'Tra cứu', link: '/vi/reference/api', activeMatch: '/vi/reference/' },
     { text: 'Ghi chép', link: '/vi/notes/', activeMatch: '/vi/notes/' },
     { text: 'ADR', link: '/vi/adr/', activeMatch: '/vi/adr/' },
@@ -84,6 +86,18 @@ function guideSidebar(): DefaultTheme.SidebarItem[] {
         { text: 'Đóng góp', link: 'contributing' },
         { text: 'Cấu hình triển khai', link: 'deploy-config' },
         { text: 'Triển khai', link: 'deployment' },
+      ],
+    },
+  ]
+}
+
+function knowledgeSidebar(): DefaultTheme.SidebarItem[] {
+  return [
+    {
+      text: 'Kiến thức nền',
+      items: [
+        { text: 'Tổng quan', link: '/vi/knowledge/' },
+        { text: 'ClickHouse giải thích chi tiết', link: 'clickhouse' },
       ],
     },
   ]
