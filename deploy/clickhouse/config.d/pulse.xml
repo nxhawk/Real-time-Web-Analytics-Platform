@@ -22,9 +22,15 @@
     <mark_cache_size>536870912</mark_cache_size>
     <uncompressed_cache_size>0</uncompressed_cache_size>
 
-    <!-- One background pool that fits a laptop; merges are the main CPU consumer. -->
+    <!-- One background pool that fits a laptop; merges are the main CPU consumer.
+         ClickHouse 26.x requires number_of_free_entries_in_pool_to_execute_mutation
+         (default 20) <= background_pool_size * concurrency_ratio (8 * 2 = 16). -->
     <background_pool_size>8</background_pool_size>
     <background_schedule_pool_size>8</background_schedule_pool_size>
+    <merge_tree>
+        <number_of_free_entries_in_pool_to_execute_mutation>4</number_of_free_entries_in_pool_to_execute_mutation>
+        <number_of_free_entries_in_pool_to_execute_optimize_entire_partition>4</number_of_free_entries_in_pool_to_execute_optimize_entire_partition>
+    </merge_tree>
 
     <!-- Keep the system tables from growing without bound during experiments. Level 2 reads
          query_log heavily, so it is kept but capped by TTL. -->

@@ -710,7 +710,9 @@ services:
     volumes:
       - /data/clickhouse:/var/lib/clickhouse
       - ./clickhouse/config.d:/etc/clickhouse-server/config.d:ro
-      - ./clickhouse/users.d:/etc/clickhouse-server/users.d:ro
+      # Mount từng file, không mount cả thư mục users.d: entrypoint image ghi
+      # users.d/default-user.xml từ CLICKHOUSE_USER / CLICKHOUSE_PASSWORD.
+      - ./clickhouse/users.d/pulse.xml:/etc/clickhouse-server/users.d/pulse.xml:ro
     environment:
       CLICKHOUSE_DB: analytics
       CLICKHOUSE_USER: pulse
@@ -930,6 +932,11 @@ Sinh hash cho basic auth: `docker run --rm caddy:2-alpine caddy hash-password --
     <max_concurrent_queries>32</max_concurrent_queries>
     <background_pool_size>8</background_pool_size>
     <background_merges_mutations_concurrency_ratio>2</background_merges_mutations_concurrency_ratio>
+    <!-- ClickHouse 26.x: free-entries mutation (mặc định 20) phải <= pool * ratio (16). -->
+    <merge_tree>
+        <number_of_free_entries_in_pool_to_execute_mutation>4</number_of_free_entries_in_pool_to_execute_mutation>
+        <number_of_free_entries_in_pool_to_execute_optimize_entire_partition>4</number_of_free_entries_in_pool_to_execute_optimize_entire_partition>
+    </merge_tree>
     <mark_cache_size>2147483648</mark_cache_size>            <!-- 2 GiB -->
     <uncompressed_cache_size>1073741824</uncompressed_cache_size>
     <logger>

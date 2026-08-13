@@ -1,0 +1,43 @@
+/*
+ * Presentation rules for Mermaid diagrams. Every rendered diagram is wrapped in
+ * `.pulse-diagram`, set by `mermaidPlugin.class` in .vitepress/config.mts.
+ */
+
+.pulse-diagram {
+  display: flex;
+  justify-content: center;
+  margin: 24px 0;
+  overflow-x: auto;
+}
+
+/*
+ * Mermaid sizes the SVG to the diagram's natural width, which leaves a sequence diagram
+ * rendered at half the column width with unreadably small text. Let it fill the column
+ * instead — an SVG scales without losing sharpness.
+ */
+.pulse-diagram svg {
+  width: 100%;
+  max-width: 100% !important;
+  height: auto;
+}
+
+/*
+ * Mermaid measures label height with its own metrics, then renders the label as HTML inside
+ * a foreignObject, where it inherits the site's much larger line-height. The text then
+ * overflows the shape it was measured for, clipping the last line of a multi-line label.
+ * Pinning the line-height back keeps rendering and measurement in agreement.
+ */
+.pulse-diagram .nodeLabel,
+.pulse-diagram .edgeLabel,
+.pulse-diagram .label,
+.pulse-diagram foreignObject div,
+.pulse-diagram foreignObject span,
+.pulse-diagram foreignObject p {
+  line-height: 1.25 !important;
+}
+
+/* Keep the light-mode label plate from washing out against the dark page background. */
+.dark .pulse-diagram .edgeLabel,
+.dark .pulse-diagram .edgeLabel p {
+  background-color: var(--vp-c-bg) !important;
+}

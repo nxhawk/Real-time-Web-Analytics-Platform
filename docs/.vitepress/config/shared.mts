@@ -28,8 +28,8 @@ export const shared = defineConfig({
 
   markdown: {
     lineNumbers: true,
-    // Render ```mermaid blocks as diagrams is not enabled: it pulls a large runtime.
-    // ASCII diagrams are used instead, matching PLAN.md.
+    // ```mermaid fenced blocks are rendered as diagrams by vitepress-plugin-mermaid, wired
+    // up in .vitepress/config.mts. Mermaid only loads on pages that contain a diagram.
     theme: { light: 'github-light', dark: 'github-dark' },
   },
 

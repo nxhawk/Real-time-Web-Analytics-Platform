@@ -82,6 +82,7 @@ function guideSidebar(): DefaultTheme.SidebarItem[] {
       collapsed: false,
       items: [
         { text: 'Đóng góp', link: 'contributing' },
+        { text: 'Cấu hình triển khai', link: 'deploy-config' },
         { text: 'Triển khai', link: 'deployment' },
       ],
     },

@@ -80,6 +80,7 @@ function guideSidebar(): DefaultTheme.SidebarItem[] {
       collapsed: false,
       items: [
         { text: 'Contributing', link: 'contributing' },
+        { text: 'Deploy configuration', link: 'deploy-config' },
         { text: 'Deployment', link: 'deployment' },
       ],
     },
