@@ -279,8 +279,14 @@ func searchUp(match func(dir string) (string, bool)) (string, bool) {
 	return "", false
 }
 
+// isFile reports whether path exists and is a regular file.
+//
+// The Clean call is not decoration. CONFIG_DIR and ENV_FILE reach this function from the
+// process environment, and gosec's G703 taint analysis — correctly — refuses to let an
+// environment-derived string reach os.Stat unnormalised. Clean is its recognised sanitizer,
+// and normalising once here covers every filesystem lookup the package makes.
 func isFile(path string) bool {
-	info, err := os.Stat(path)
+	info, err := os.Stat(filepath.Clean(path))
 	return err == nil && !info.IsDir()
 }
 

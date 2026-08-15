@@ -155,10 +155,37 @@ Use these instead of restructuring:
 - **`handler.APIBasePath`** — mount new routes on the `/api/v1` group. A breaking API change
   means a second group, not an edit to this one.
 
+### The lint gate — non-negotiable
+
+**No change is finished until `make check` exits zero.** It runs gofmt, `go vet`,
+golangci-lint and the race-enabled tests, and it is the same set CI runs, so a clean local
+run is the only reliable prediction of a green pipeline. Never hand back work, tick a task in
+`TODO.md`, or open a pull request on the assumption that a finding is cosmetic — CI fails the
+build on any finding, from any of the enabled linters.
+
+When a linter flags something:
+
+1. **Fix the code.** This is almost always right and almost always small.
+2. If the finding is a genuine false positive, silence it at the narrowest possible scope —
+   a `//nolint:<linter> // <reason>` on the one line — and the comment must say *why* the
+   analysis is wrong, not that it is inconvenient.
+3. Only widen `backend/.golangci.yml` when a rule is wrong for the whole repository, and say
+   so in the file. Disabling a linter to make a red build green is not a fix.
+
+Two findings worth knowing before they happen:
+
+- **`gosec` G703 (path traversal via taint analysis)** treats `os.Getenv` as a taint source
+  and `os.Stat` / `os.Open` / `os.ReadFile` as sinks. Its recognised sanitizers are
+  `filepath.Clean`, `filepath.Abs`, `filepath.Base` and `filepath.Rel` — and it only credits
+  them when the call sits **directly** on the argument at the sink. Sanitizing at the point
+  the variable is read does not clear the taint. See `isFile` in `internal/config/config.go`.
+- **`golangci-lint` must be v2.** `backend/.golangci.yml` is a `version: "2"` file; v1 cannot
+  parse it. The CI workflow pins `golangci/golangci-lint-action@v9` with `version: v2.12`
+  because a golangci-lint built with an older Go than `go.mod` targets refuses to run at all.
+
 ### Conventions the linter enforces
 
-`make check` runs gofmt, `go vet`, golangci-lint and the race-enabled tests — the same set as
-CI. Beyond that:
+Beyond what the linters check:
 
 - Errors wrap with `%w` and carry context: `fmt.Errorf("insert batch: %w", err)`.
 - Log **or** return an error, never both.
@@ -207,7 +234,8 @@ numbers in `docs/benchmark-results.md`.
 2. Read the referenced `PLAN.md` section before writing code. The DDL, query shapes and API
    contract are already decided there.
 3. Implement, following the layering rules in section 2.
-4. Add or update tests. `make check` must be clean.
+4. Add or update tests, then run `make check` and get it to zero findings. A task with a
+   failing lint is not done — see the lint gate in section 2.
 5. Tick the task `[x]` in `TODO.md`, and fix any document the implementation contradicted.
 6. Commit with Conventional Commits, referencing the task ID: `feat(ingest): accept batches
    of up to 500 events` with `Closes L1-17` in the pull request body.
