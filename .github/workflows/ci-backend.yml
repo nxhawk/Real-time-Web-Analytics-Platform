@@ -20,20 +20,27 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: '1.26'
   WORKING_DIR: backend
+  # golangci-lint must be built with a Go version >= the one targeted by go.mod (1.26).
+  # v2.9.0+ is built with go1.26; pinning the minor keeps patch upgrades automatic.
+  GOLANGCI_LINT_VERSION: v2.12
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: ${{ env.GO_VERSION }}
+          # Single source of truth: the Go version comes from go.mod itself.
+          go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
+
+      - name: Download modules
+        working-directory: ${{ env.WORKING_DIR }}
+        run: go mod download
 
       - name: Verify module integrity
         working-directory: ${{ env.WORKING_DIR }}
@@ -43,8 +50,10 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: |
           go mod tidy
-          git diff --exit-code -- go.mod go.sum \
-            || (echo "::error::go.mod/go.sum are not tidy — run 'go mod tidy'" && exit 1)
+          if ! git diff --exit-code -- go.mod go.sum; then
+            echo "::error::go.mod/go.sum are not tidy - run 'cd backend && go mod tidy' and commit the result"
+            exit 1
+          fi
 
       - name: gofmt
         working-directory: ${{ env.WORKING_DIR }}
@@ -60,21 +69,28 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: go vet ./...
 
-      - uses: golangci/golangci-lint-action@v6
+      # v9 is the first major that runs golangci-lint v2, which is the config format used
+      # by backend/.golangci.yml (version: "2"). v6 pulled golangci-lint v1, which cannot
+      # read that file and is built with an older Go than go.mod targets.
+      - uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
           working-directory: ${{ env.WORKING_DIR }}
 
   test:
     name: Unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
+
+      - name: Download modules
+        working-directory: ${{ env.WORKING_DIR }}
+        run: go mod download
 
       - name: Test with race detector
         working-directory: ${{ env.WORKING_DIR }}
@@ -84,7 +100,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: go tool cover -func=coverage.out | tail -1 >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: backend-coverage
           path: backend/coverage.out
@@ -98,12 +114,12 @@ jobs:
       matrix:
         service: [ingest-api, analytics-api]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Build image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./backend
           push: false
