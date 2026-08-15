@@ -116,8 +116,8 @@ Two details worth internalising:
   debugging. Inserts always go over the native protocol.
 
 Note what is *not* here: `BATCH_SIZE`, `INGEST_WORKERS`, `SINK` and the rest are absent, so
-each service uses the defaults compiled into `internal/config`. Override them per environment
-in `.env`, not by editing this file.
+each service uses the defaults from `backend/config/<APP_ENV>.config.yml`, which is baked
+into the image. Override them per environment in `.env`, not by editing this file.
 
 #### `x-build-args`
 
@@ -398,7 +398,7 @@ docker-compose.yml ──build args──▶ backend/Dockerfile ──▶ distro
       │                                                        │
       │  bind mount :ro                                        │ env vars
       ▼                                                        ▼
-deploy/clickhouse/config.d/pulse.xml   ┐              internal/config
+deploy/clickhouse/config.d/pulse.xml   ┐         backend/config/*.config.yml
 deploy/clickhouse/users.d/pulse.xml    ├─ merged over  ─┐      │
 image entrypoint → users.d/default-user.xml            │      │  clickhouse://pulse@clickhouse:9000
                                         base config.xml ┘      ▼

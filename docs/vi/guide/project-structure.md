@@ -29,6 +29,7 @@ pulse-analytics/
 │   │   ├── validate/               #   quy tắc validate event                      [L1]
 │   │   ├── buffer/                 #   batch writer, backpressure, WAL fallback    [L3]
 │   │   └── kafka/                  #   producer, consumer, DLQ                     [L4]
+│   ├── config/                     # development|staging|production|test .config.yml
 │   ├── pkg/                        # import được từ ngoài: wrapper geoip, uaparser
 │   ├── migrations/                 # migration goose đánh số, .up.sql / .down.sql
 │   ├── test/                       # integration test (testcontainers) + fixture
@@ -53,7 +54,7 @@ pulse-analytics/
 ├── docker-compose.prod.yml         # stack production                              [L6]
 ├── docker-compose.bench.yml        # thêm PostgreSQL cho benchmark                 [L3]
 ├── Makefile                        # mọi lệnh phát triển — chạy `make help`
-└── .env.example                    # mọi biến cấu hình, có chú thích
+└── .env.example                    # chỉ secret và giá trị riêng từng máy
 ```
 
 ## Luật phân tầng
@@ -67,7 +68,7 @@ Phụ thuộc chỉ đi một chiều — `cmd` → `handler` → `service` → 
 | `service/` | Nghiệp vụ: validate, enrich, điều phối | Biết mình đang được gọi qua HTTP |
 | `repository/` | Truy cập storage, SQL viết tay | Chứa nghiệp vụ |
 | `httpx/` | Hạ tầng transport tái dùng cho mọi service | Biết gì về analytics |
-| `config/` | Đọc và validate môi trường | Bị `os.Getenv` ở nơi khác đi vòng |
+| `config/` | Nạp và validate `backend/config/*.config.yml` | Bị `os.Getenv` ở nơi khác đi vòng |
 
 Khi đặt file mới, hỏi nó **làm gì**, không phải nó thuộc tính năng nào. Query funnel vào
 `repository/clickhouse/`; luật "funnel tối đa 8 bước" vào `service/`; việc biến `?steps=a,b,c`
@@ -114,9 +115,10 @@ trọng hơn vài kết nối không chịu đóng.
 
 ### `config.Config` — thêm thiết lập
 
-Thêm một knob luôn là ba chỗ sửa: field kèm tag `env` và default, một kiểm tra trong
-`Validate()`, và một mục có chú thích trong `.env.example`. `Validate()` báo **mọi** lỗi tìm
-được chứ không dừng ở lỗi đầu, để một deployment sai cấu hình sửa được trong một lượt.
+Thêm một knob luôn là bốn chỗ sửa: field kèm tag `mapstructure`, key trong cả bốn file dưới
+`backend/config/`, một kiểm tra trong `Validate()`, và một dòng trong trang cấu hình.
+`Validate()` báo **mọi** lỗi tìm được chứ không dừng ở lỗi đầu, để một deployment sai cấu
+hình sửa được trong một lượt.
 
 ## Quy ước
 

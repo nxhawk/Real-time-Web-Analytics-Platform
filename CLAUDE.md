@@ -146,8 +146,10 @@ Use these instead of restructuring:
 - **`httpx.Server.Run(ctx, hooks...)`** — a shutdown hook runs after the listener closes and
   before the process exits. This is where the batch-writer flush belongs (task L3-12), so no
   accepted event is lost on deploy.
-- **`config.Config`** — add a field with an `env` tag and a default, extend `Validate()`, then
-  document the variable in `.env.example`. All three, every time.
+- **`config.Config`** — add a field with a `mapstructure` tag, add the key to all four files
+  in `backend/config/`, extend `Validate()`, then document it in the configuration guide.
+  All four, every time. A placeholder written `${VAR}` with no `:-fallback` is mandatory at
+  startup; that is how production requires its secrets.
 - **`metrics.Registry`** — register new collectors here. Never create a second registry and
   never use `prometheus.DefaultRegisterer`.
 - **`handler.APIBasePath`** — mount new routes on the `/api/v1` group. A breaking API change
@@ -212,5 +214,5 @@ numbers in `docs/benchmark-results.md`.
 
 Shared numbers — tool versions, performance thresholds, API limits, seeder distributions —
 are owned by [`PHASES.md` §2](PHASES.md#2-bảng-số-liệu-chuẩn). Change them there first, then
-propagate to `PLAN.md`, `README.md`, `.env.example` and the code. Never change one in
-isolation.
+propagate to `PLAN.md`, `README.md`, `backend/config/*.config.yml` and the code. Never change
+one in isolation.

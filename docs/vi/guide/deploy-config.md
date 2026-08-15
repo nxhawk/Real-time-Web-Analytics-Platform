@@ -113,8 +113,8 @@ Hai chi tiết cần nhớ kỹ:
   Insert luôn đi qua native protocol.
 
 Chú ý thứ **không** có ở đây: `BATCH_SIZE`, `INGEST_WORKERS`, `SINK`… đều vắng mặt, nên mỗi
-service dùng default biên dịch sẵn trong `internal/config`. Muốn đổi theo môi trường thì sửa
-`.env`, đừng sửa file này.
+service dùng default trong `backend/config/<APP_ENV>.config.yml`, được đóng sẵn vào image.
+Muốn đổi theo môi trường thì sửa `.env`, đừng sửa file này.
 
 #### `x-build-args`
 
@@ -395,7 +395,7 @@ docker-compose.yml ──build args──▶ backend/Dockerfile ──▶ image 
       │                                                        │
       │  bind mount :ro                                        │ biến môi trường
       ▼                                                        ▼
-deploy/clickhouse/config.d/pulse.xml   ┐              internal/config
+deploy/clickhouse/config.d/pulse.xml   ┐         backend/config/*.config.yml
 deploy/clickhouse/users.d/pulse.xml    ├─ merge đè lên ─┐      │
 entrypoint image → users.d/default-user.xml            │      │  clickhouse://pulse@clickhouse:9000
                                         config.xml gốc ┘      ▼

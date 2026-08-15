@@ -163,7 +163,7 @@ Two goals, in order of importance:
 | Migrations | goose | latest | Chosen over golang-migrate for multi-statement ClickHouse support |
 | Streaming | Apache Kafka (KRaft) | 4.x | Redpanda is an acceptable lighter dev substitute |
 | Kafka client | `twmb/franz-go` | latest | Pure Go, no cgo |
-| Config | `caarlos0/env` + `.env` | | |
+| Config | `spf13/viper` + YAML per environment + `.env` | v1.21+ | `backend/config/<APP_ENV>.config.yml` holds the defaults; `${VAR}` placeholders bring in secrets |
 | Logging | `log/slog` + JSON handler | | Structured logs only |
 | Metrics | `prometheus/client_golang` | | |
 | Tracing | OpenTelemetry Go SDK | | Optional, Level 5 |
@@ -248,7 +248,7 @@ pulse-analytics/
 ├── docker-compose.prod.yml         # production stack                       (Level 6)
 ├── docker-compose.bench.yml        # adds PostgreSQL for the benchmark      (Level 3)
 ├── Makefile                        # every development command — run `make help`
-├── .env.example                    # every configuration variable, documented
+├── .env.example                    # secrets and per-machine overrides only
 │
 ├── README.md                       # this file
 ├── PLAN.md                         # full technical specification
@@ -370,7 +370,9 @@ curl -X POST http://localhost:8080/api/v1/events \
 
 ## Configuration
 
-All configuration is read from environment variables (see `.env.example` for the full list).
+Defaults live in `backend/config/<APP_ENV>.config.yml`; `${VAR}` and `${VAR:-fallback}`
+placeholders in those files pull secrets and per-machine values out of `.env` or the real
+environment. See the [configuration guide](docs/guide/configuration.md) for the full list.
 
 | Variable | Default | Description |
 |---|---|---|

@@ -29,6 +29,7 @@ pulse-analytics/
 │   │   ├── validate/               #   event validation rules                      [L1]
 │   │   ├── buffer/                 #   batch writer, backpressure, WAL fallback    [L3]
 │   │   └── kafka/                  #   producer, consumer, DLQ                     [L4]
+│   ├── config/                     # development|staging|production|test .config.yml
 │   ├── pkg/                        # importable from outside: geoip, uaparser wrappers
 │   ├── migrations/                 # numbered goose migrations, .up.sql / .down.sql
 │   ├── test/                       # integration tests (testcontainers) + fixtures
@@ -53,7 +54,7 @@ pulse-analytics/
 ├── docker-compose.prod.yml         # production stack                              [L6]
 ├── docker-compose.bench.yml        # adds PostgreSQL for the benchmark             [L3]
 ├── Makefile                        # every development command — run `make help`
-└── .env.example                    # every configuration variable, documented
+└── .env.example                    # secrets and per-machine overrides only
 ```
 
 ## Layering rules
@@ -67,7 +68,7 @@ Dependencies point one way — `cmd` → `handler` → `service` → `repository
 | `service/` | Business rules: validation, enrichment, orchestration | Know it is being called over HTTP |
 | `repository/` | Storage access, hand-written SQL | Contain business rules |
 | `httpx/` | Transport plumbing reusable by any service | Know anything about analytics |
-| `config/` | Read and validate the environment | Be bypassed by `os.Getenv` elsewhere |
+| `config/` | Load and validate `backend/config/*.config.yml` | Be bypassed by `os.Getenv` elsewhere |
 
 When placing a new file, ask what it *does*, not which feature it belongs to. A funnel query
 goes in `repository/clickhouse/`; the rule that a funnel has at most eight steps goes in
@@ -114,9 +115,10 @@ a few connections that refused to close.
 
 ### `config.Config` — new settings
 
-Adding a knob is three edits, every time: a field with an `env` tag and a default, a check in
-`Validate()`, and a documented entry in `.env.example`. `Validate()` reports *every* problem
-it finds rather than the first, so a misconfigured deployment can be fixed in one pass.
+Adding a knob is four edits, every time: a field with a `mapstructure` tag, the key in all
+four files under `backend/config/`, a check in `Validate()`, and a line on the configuration
+page. `Validate()` reports *every* problem it finds rather than the first, so a misconfigured
+deployment can be fixed in one pass.
 
 ## Conventions
 

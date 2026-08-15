@@ -102,8 +102,8 @@ this repository.
 - **Logging** uses `log/slog` with the JSON handler. No `fmt.Println`, no `log.Printf`.
   Never log event payloads or anything that could contain personal data.
 - **Context** is the first parameter of every function that does I/O.
-- **Configuration** is read from the environment in `internal/config` only. No package reads
-  `os.Getenv` on its own.
+- **Configuration** comes from `backend/config/<APP_ENV>.config.yml`, loaded by
+  `internal/config` only. No package reads `os.Getenv` on its own.
 
 ---
 

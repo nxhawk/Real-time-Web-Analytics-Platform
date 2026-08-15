@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 #
 # Multi-stage build. The build stage carries the Go toolchain; the runtime stage is
-# distroless and holds nothing but the static binary, so there is no shell to exec into and
-# nothing to patch for CVEs.
+# distroless and holds nothing but the static binary and the configuration files, so there is
+# no shell to exec into and nothing to patch for CVEs.
 #
 # Build one service at a time:
 #   docker build --build-arg SERVICE=ingest-api -t pulse/ingest-api:dev ./backend
@@ -48,6 +48,15 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 FROM gcr.io/distroless/static-debian12:nonroot AS runtime
 
 COPY --from=build /out/app /app
+
+# The per-environment configuration travels with the binary: it holds no secrets, only
+# defaults and ${VAR} placeholders that the container's environment fills in. Baking it into
+# the image means the running container is reproducible from the tag alone.
+COPY --from=build /src/config /config
+
+# The binary runs from / with no source tree around it, so the loader cannot find ./config by
+# walking up. Point it at the copy above.
+ENV CONFIG_DIR=/config
 
 # nonroot is uid/gid 65532 in the distroless image.
 USER nonroot:nonroot
