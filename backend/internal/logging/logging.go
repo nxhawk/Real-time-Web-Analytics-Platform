@@ -20,7 +20,7 @@ func New(cfg *config.Config, service string) *slog.Logger {
 
 // NewTo is New with an explicit destination. Tests use it to capture output.
 func NewTo(w io.Writer, cfg *config.Config, service string) *slog.Logger {
-	opts := &slog.HandlerOptions{Level: cfg.SlogLevel()}
+	opts := &slog.HandlerOptions{Level: cfg.Log.SlogLevel()}
 
 	var handler slog.Handler
 	if cfg.Log.Format == "text" {

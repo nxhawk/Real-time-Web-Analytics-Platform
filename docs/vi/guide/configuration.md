@@ -254,11 +254,20 @@ production, `.env` được tạo trên máy đích với quyền `600` và khô
 
 ## Thêm một thiết lập mới
 
-1. Thêm field vào struct phù hợp trong `backend/internal/config/config.go`, kèm tag
-   `mapstructure`.
+`backend/internal/config` chia mỗi section cấu hình thành một file — `app.go`, `http.go`,
+`log.go`, `clickhouse.go`, `ingest.go`, `kafka.go` — nên một thiết lập được khai báo và kiểm
+tra ở cùng một chỗ. `config.go` chỉ giữ struct `Config` tổng hợp và các quy tắc liên quan tới
+nhiều section; `load.go` và `expand.go` giữ phần tìm file và phân giải `${VAR}`.
+
+1. Thêm field vào đúng file section của nó, kèm tag `mapstructure`.
 2. Thêm key vào **cả bốn** file trong `backend/config/`, dùng placeholder `${VAR:-fallback}`
    nếu muốn override được. Key có trong struct nhưng thiếu ở một file sẽ decode thành giá trị
    zero — `TestShippedFilesLoad` sinh ra để bắt đúng lỗi đó.
-3. Thêm kiểm tra vào `Validate()`. Thiết lập nào có thể sai thì phải báo ngay lúc khởi động.
+3. Thêm kiểm tra vào method `validate` của chính section đó — không phải `Config.Validate`,
+   nơi chỉ chứa quy tắc bắc cầu giữa các section. Thiết lập nào có thể sai thì phải báo ngay
+   lúc khởi động.
 4. Ghi vào trang này, và nếu là thứ người ta thật sự hay override thì ghi thêm vào
    `.env.example`.
+
+Thêm hẳn một section mới cũng theo đúng khuôn đó: tạo `<tên>.go` chứa struct và `validate`
+của nó, thêm field vào `Config`, và khai báo trong `Config.sections`. Không phải sửa gì khác.

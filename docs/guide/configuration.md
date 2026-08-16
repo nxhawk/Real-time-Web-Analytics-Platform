@@ -254,11 +254,19 @@ committed; `gitleaks` runs on every pull request from Level 6 onwards.
 
 ## Adding a new setting
 
-1. Add the field to the right struct in `backend/internal/config/config.go` with a
-   `mapstructure` tag.
+`backend/internal/config` holds one file per configuration section — `app.go`, `http.go`,
+`log.go`, `clickhouse.go`, `ingest.go`, `kafka.go` — so a setting is declared and validated in
+the same place. `config.go` holds only the `Config` aggregate and the rules that span two
+sections; `load.go` and `expand.go` hold the file lookup and the `${VAR}` resolution.
+
+1. Add the field to the section file it belongs to, with a `mapstructure` tag.
 2. Add the key to **all four** files in `backend/config/`, with a `${VAR:-fallback}`
    placeholder if it should be overridable. A key present in the struct but missing from a
    file decodes to the zero value — `TestShippedFilesLoad` is what catches that.
-3. Add a check to `Validate()`. Every setting that can be wrong should say so at startup.
+3. Add the check to that section's `validate` method — not to `Config.Validate`, which owns
+   only cross-section rules. Every setting that can be wrong should say so at startup.
 4. Document it on this page and, if it is one people will actually override, in
    `.env.example`.
+
+A whole new section is the same shape: add `<name>.go` with the struct and its `validate`,
+add the field to `Config`, and list it in `Config.sections`. Nothing else changes.

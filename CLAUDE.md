@@ -146,10 +146,13 @@ Use these instead of restructuring:
 - **`httpx.Server.Run(ctx, hooks...)`** — a shutdown hook runs after the listener closes and
   before the process exits. This is where the batch-writer flush belongs (task L3-12), so no
   accepted event is lost on deploy.
-- **`config.Config`** — add a field with a `mapstructure` tag, add the key to all four files
-  in `backend/config/`, extend `Validate()`, then document it in the configuration guide.
-  All four, every time. A placeholder written `${VAR}` with no `:-fallback` is mandatory at
-  startup; that is how production requires its secrets.
+- **`config.Config`** — the package is one file per section (`app.go`, `http.go`, `log.go`,
+  `clickhouse.go`, `ingest.go`, `kafka.go`). Add a field with a `mapstructure` tag to the
+  section it belongs to, add the key to all four files in `backend/config/`, extend that
+  section's `validate` method, then document it in the configuration guide. All four, every
+  time. `Config.Validate` owns only rules that span two sections; a new section means a new
+  file plus one line in `Config.sections`. A placeholder written `${VAR}` with no
+  `:-fallback` is mandatory at startup; that is how production requires its secrets.
 - **`metrics.Registry`** — register new collectors here. Never create a second registry and
   never use `prometheus.DefaultRegisterer`.
 - **`handler.APIBasePath`** — mount new routes on the `/api/v1` group. A breaking API change
@@ -178,7 +181,7 @@ Two findings worth knowing before they happen:
   and `os.Stat` / `os.Open` / `os.ReadFile` as sinks. Its recognised sanitizers are
   `filepath.Clean`, `filepath.Abs`, `filepath.Base` and `filepath.Rel` — and it only credits
   them when the call sits **directly** on the argument at the sink. Sanitizing at the point
-  the variable is read does not clear the taint. See `isFile` in `internal/config/config.go`.
+  the variable is read does not clear the taint. See `isFile` in `internal/config/load.go`.
 - **`golangci-lint` must be v2.** `backend/.golangci.yml` is a `version: "2"` file; v1 cannot
   parse it. The CI workflow pins `golangci/golangci-lint-action@v9` with `version: v2.12`
   because a golangci-lint built with an older Go than `go.mod` targets refuses to run at all.
