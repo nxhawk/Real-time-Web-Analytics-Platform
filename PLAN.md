@@ -193,7 +193,7 @@ Xây một analytics platform tự host, nhận event từ website/app, lưu và
 | Log | `log/slog` (stdlib) + JSON handler | | |
 | Metrics | `prometheus/client_golang` | | |
 | Tracing | OpenTelemetry Go SDK | | Optional Level 5 |
-| Validation | `go-playground/validator/v10` | | |
+| Validation | **Tự viết** trong `internal/validate` | | Quy tắc ở §5.2 phần lớn là *sửa* giá trị chứ không loại event — struct tag không diễn đạt được. Xem `docs/adr/0011-hand-written-event-validation.md` |
 | Test | stdlib + `testify` + `testcontainers-go` | | ClickHouse container thật cho integration test |
 | Lint | `golangci-lint` v2 | | |
 | Frontend | **Next.js 16.3** (App Router) + React 19 | | |
@@ -424,9 +424,22 @@ pulse-analytics/
 | `user_id` | <= 128 ký tự | truncate |
 | `page` | <= 2048 ký tự, strip query string nhạy cảm (`token`, `email`, `password`) | sanitize |
 | `properties` | JSON object, <= 8KB serialize | reject event |
+| `event_id` | UUID nếu client có gửi; thiếu thì server sinh UUIDv7 | reject event nếu sai định dạng |
+| `session_id` | <= 128 ký tự | truncate |
+| `referrer` | như `page` — cùng denylist, cùng giới hạn 2048 | sanitize |
+| `country` | ISO 3166-1 alpha-2 | xoá trắng để GeoIP điền |
+| `city` | <= 128 ký tự | truncate |
+| `device` | `desktop\|mobile\|tablet\|bot\|unknown` | chuẩn hoá về `unknown` |
+| `os`, `browser`, `utm_*` | <= 64 ký tự (cột `LowCardinality`) | truncate |
+| `revenue` | vừa `Decimal(18, 4)`: <= 14 chữ số nguyên, <= 4 chữ số thập phân, không dạng mũ | reject event |
+| `currency` | ISO 4217 | về mặc định `VND` |
 | batch size | <= 500 events, body <= 1MB | 413 |
 
 **Nguyên tắc partial success**: batch 100 event, 3 event sai → nhận 97, trả `202` kèm `rejected: [...]`. Không bao giờ để 1 event hỏng làm mất cả batch.
+
+**Hai loại lỗi, đừng trộn lẫn.** Lỗi "reject" là bug của client và phải báo ngược lại; lỗi "sửa" là hoàn cảnh người dùng không chọn (đồng hồ sai, URL dài, UA lạ) và loại event vì nó là vứt traffic thật. Mọi phép sửa đều tăng `pulse_events_field_repaired_total{field,repair}` để không có gì diễn ra âm thầm.
+
+**`screen` chưa có cột.** §5.1 mô tả nó nhưng §6.1 không có cột tương ứng — hiện nhận rồi bỏ. Muốn giữ thì gửi trong `properties`.
 
 ### 5.3 Enrichment phía server
 
@@ -1257,6 +1270,8 @@ Tính năng: auto page_view (kể cả SPA route change qua `history.pushState` 
 |---|---|---|
 | `pulse_events_received_total` | counter | site, event_name |
 | `pulse_events_rejected_total` | counter | site, reason |
+| `pulse_events_field_repaired_total` | counter | field, repair |
+| `pulse_events_clock_skew_total` | counter | direction (`future`\|`past`) |
 | `pulse_events_dropped_total` | counter | site |
 | `pulse_buffer_size` | gauge | worker |
 | `pulse_batch_size` | histogram | |

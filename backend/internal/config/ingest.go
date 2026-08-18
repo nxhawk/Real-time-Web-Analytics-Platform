@@ -1,6 +1,9 @@
 package config
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // maxEventsPerRequestLimit is the upper bound of the batch endpoint, fixed by the API
 // contract in PLAN.md 5.2. A configuration file cannot raise it: the limit exists to bound
@@ -20,6 +23,14 @@ type Ingest struct {
 	WALDir          string     `mapstructure:"wal_dir"`
 	MaxEventsPerReq int        `mapstructure:"max_events_per_request"`
 	RateLimitPerMin int        `mapstructure:"rate_limit_per_min"`
+
+	// SensitiveQueryParams are query parameters stripped from page and referrer before
+	// storage, on top of the built-in denylist in internal/validate. Comma-separated in the
+	// YAML, matched case-insensitively, and additive only: the built-in set covers token,
+	// password and the rest of the unambiguous credentials, and nothing here can switch one
+	// of those off. This knob exists for the names that are a credential in one application
+	// and ordinary analytics data in another, such as code or ref.
+	SensitiveQueryParams []string `mapstructure:"sensitive_query_params"`
 }
 
 // FlushInterval is the maximum time a batch waits before being flushed.
@@ -55,5 +66,15 @@ func (i Ingest) validate(p *problems) {
 	if i.MaxEventsPerReq <= 0 || i.MaxEventsPerReq > maxEventsPerRequestLimit {
 		p.addf("ingest.max_events_per_request (MAX_EVENTS_PER_REQUEST) must be between 1 and %d",
 			maxEventsPerRequestLimit)
+	}
+
+	// A parameter name, not a query string. Pasting "?token=x" or "a=1&b=2" in here would
+	// silently match nothing, which is the worst possible failure for a privacy control:
+	// it looks configured and strips nothing.
+	for _, name := range i.SensitiveQueryParams {
+		if strings.ContainsAny(name, "=&?#") {
+			p.addf("ingest.sensitive_query_params (SENSITIVE_QUERY_PARAMS) takes parameter "+
+				"names, not a query string, but contains %q", name)
+		}
 	}
 }

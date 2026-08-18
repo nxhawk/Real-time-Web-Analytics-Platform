@@ -146,13 +146,13 @@ Các con số dùng chung (version, ngưỡng hiệu năng, hạn mức, phân p
 
 ## L1.1 — Model & validation (4h)
 
-- [ ] `L1-01` `internal/model/event.go`: struct `Event`, `IngestRequest`, `RejectedEvent{Index, Reason}`
-- [ ] `L1-02` Validate theo PLAN §5.2: regex tên event, độ dài field, giới hạn batch 500, properties <= 8KB
-- [ ] `L1-03` Xử lý timestamp: parse ISO8601, phát hiện clock skew, override + đếm metric
-- [ ] `L1-04` Sanitize `page`: strip fragment, strip query param nhạy cảm theo denylist, giới hạn 2048 ký tự
-- [ ] `L1-05` Unit test cho toàn bộ validate/sanitize (table-driven, >= 25 case)
+- [x] `L1-01` `internal/model/event.go`: struct `Event`, `IngestRequest`, `RejectedEvent{Index, Reason}`
+- [x] `L1-02` Validate theo PLAN §5.2: regex tên event, độ dài field, giới hạn batch 500, properties <= 8KB
+- [x] `L1-03` Xử lý timestamp: parse ISO8601, phát hiện clock skew, override + đếm metric
+- [x] `L1-04` Sanitize `page`: strip fragment, strip query param nhạy cảm theo denylist, giới hạn 2048 ký tự
+- [x] `L1-05` Unit test cho toàn bộ validate/sanitize (table-driven, >= 25 case)
 
-> **Done khi**: `go test ./internal/model/... ./internal/validate/...` xanh, coverage > 85%.
+> **Done khi**: `go test ./internal/model/... ./internal/validate/...` xanh, coverage > 85%. ✅ *(model 100%, validate 99.1%)*
 
 
 

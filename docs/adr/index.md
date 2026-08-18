@@ -1,6 +1,6 @@
 # Architecture decisions
 
-Ten decisions shape this system. Each one is recorded as an ADR so that six months from now
+Eleven decisions shape this system. Each one is recorded as an ADR so that six months from now
 the question is "was this still the right trade-off" rather than "why on earth is it like
 this".
 
@@ -18,6 +18,7 @@ Format: **Context** → **Decision** → **Consequences** → **Alternatives con
 | 0008 | Docker Compose instead of Kubernetes | One host, one person. Kubernetes is operational cost with no return here | Accepted |
 | 0009 | Single-node ClickHouse, no replication yet | Less complexity now; the upgrade path via Keeper and ReplicatedMergeTree is documented | Accepted |
 | 0010 | Return `202 Accepted` for ingest | Ingest must not depend on storage availability | Accepted |
+| [0011](/adr/0011-hand-written-event-validation) | Hand-written validation, no `validator/v10` | Half the rules in PLAN §5.2 repair the value instead of rejecting the event, which a tag cannot express | Accepted |
 
 ## Provisional means provisional
 

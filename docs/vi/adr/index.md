@@ -1,6 +1,6 @@
 # Quyết định kiến trúc
 
-Mười quyết định định hình hệ thống này. Mỗi cái được ghi thành một ADR để sáu tháng sau câu hỏi
+Mười một quyết định định hình hệ thống này. Mỗi cái được ghi thành một ADR để sáu tháng sau câu hỏi
 là "đánh đổi này còn đúng không" chứ không phải "vì sao nó lại thành ra thế này".
 
 Định dạng: **Bối cảnh** → **Quyết định** → **Hệ quả** → **Phương án đã cân nhắc**.
@@ -17,6 +17,7 @@ là "đánh đổi này còn đúng không" chứ không phải "vì sao nó l�
 | 0008 | Docker Compose thay vì Kubernetes | Một máy, một người. Kubernetes là chi phí vận hành không đem lại gì ở đây | Đã chốt |
 | 0009 | ClickHouse một node, chưa replication | Bớt phức tạp lúc này; đường nâng cấp qua Keeper và ReplicatedMergeTree đã ghi lại | Đã chốt |
 | 0010 | Trả `202 Accepted` cho ingest | Ingest không được phụ thuộc vào độ sẵn sàng của storage | Đã chốt |
+| [0011](/vi/adr/0011-hand-written-event-validation) | Validate tự viết, không dùng `validator/v10` | Một nửa quy tắc ở PLAN §5.2 sửa giá trị chứ không loại event — struct tag không diễn đạt được | Đã chốt |
 
 ## Tạm nghĩa là tạm
 

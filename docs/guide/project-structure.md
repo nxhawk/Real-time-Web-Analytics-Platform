@@ -25,8 +25,8 @@ pulse-analytics/
 │   │   ├── repository/
 │   │   │   ├── clickhouse/         #     connection, repos, queries/*.sql embedded [L1]
 │   │   │   └── postgres/           #     benchmark comparison only                 [L3]
-│   │   ├── model/                  #   domain types shared across layers           [L1]
-│   │   ├── validate/               #   event validation rules                      [L1]
+│   │   ├── model/                  #   domain types shared across layers           [L1 ✓]
+│   │   ├── validate/               #   event validation rules                      [L1 ✓]
 │   │   ├── buffer/                 #   batch writer, backpressure, WAL fallback    [L3]
 │   │   └── kafka/                  #   producer, consumer, DLQ                     [L4]
 │   ├── config/                     # development|staging|production|test .config.yml

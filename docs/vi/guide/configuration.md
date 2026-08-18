@@ -219,6 +219,20 @@ Trong Docker Compose host là `clickhouse`; từ máy bạn là `localhost`.
 | `ingest.wal_dir` | `WAL_DIR` | `./data/wal` | Nơi ghi batch khi không tới được ClickHouse |
 | `ingest.max_events_per_request` | `MAX_EVENTS_PER_REQUEST` | `500` | Contract API chặn ở 500 |
 | `ingest.rate_limit_per_min` | `INGEST_RATE_LIMIT_PER_MIN` | `1000` | Theo từng API key |
+| `ingest.sensitive_query_params` | `SENSITIVE_QUERY_PARAMS` | *(rỗng)* | Query param bị strip thêm khỏi `page` và `referrer`, ngăn cách bằng dấu phẩy |
+
+::: warning `sensitive_query_params` chỉ cộng thêm
+Denylist mặc định — `token`, `email`, `password`, `secret`, `otp`, `api_key`, `apikey`,
+`access_token`, `refresh_token`, `id_token`, `authorization`, `passwd`, `pwd` — luôn có hiệu
+lực và không thể tắt từ cấu hình. Để trống key này là an toàn; không có giá trị nào tắt được
+việc strip mật khẩu.
+
+Dùng nó cho những tên là bí mật trong ứng dụng của bạn nhưng là dữ liệu analytics bình thường ở
+nơi khác, ví dụ `code` hay `ref`. So khớp không phân biệt hoa thường. Key này nhận *tên* tham
+số: `SENSITIVE_QUERY_PARAMS=code,ref`, không phải `?code=x`. Giá trị chứa `=`, `&`, `?` hay `#`
+là lỗi lúc khởi động, vì một query string dán vào đây sẽ không khớp gì cả trong khi trông y hệt
+một biện pháp bảo vệ riêng tư đã được cấu hình.
+:::
 
 ::: tip Các giá trị này là tạm thời
 `batch_size` và `flush_interval_ms` sẽ được chỉnh lại ở Level 3 dựa trên throughput, số part

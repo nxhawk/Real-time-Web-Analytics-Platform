@@ -57,6 +57,11 @@ ingest:
   # The API contract caps this at 500.
   max_events_per_request: "${MAX_EVENTS_PER_REQUEST:-500}"
   rate_limit_per_min: "${INGEST_RATE_LIMIT_PER_MIN:-1000}"
+  # Query parameters stripped from page and referrer, on top of the built-in denylist
+  # (token, password, email, and the other unambiguous credentials) which cannot be
+  # switched off from here. Comma-separated, matched case-insensitively. Add the names
+  # that are a credential in this application but ordinary data elsewhere.
+  sensitive_query_params: "${SENSITIVE_QUERY_PARAMS:-}"
 
 kafka:
   # Unused until Level 4. Setting sink=kafka with no brokers is a startup error, on purpose.

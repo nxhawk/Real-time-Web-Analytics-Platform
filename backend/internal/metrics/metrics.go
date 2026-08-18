@@ -1,8 +1,14 @@
 // Package metrics owns the Prometheus registry.
 //
-// Level 0 registers only build info plus the Go and process collectors — enough to prove the
-// scrape path works end to end. The application metrics listed in PLAN.md 14.1 are added
-// here in Level 6 (task L6-01); nothing else in the codebase should create a registry.
+// Level 0 registered only build info plus the Go and process collectors — enough to prove
+// the scrape path works end to end. Level 1 adds the write-path counters that validation
+// feeds (ingest.go); the rest of PLAN.md 14.1 arrives with the code that can populate it,
+// task by task. Nothing else in the codebase should create a registry.
+//
+// One file per concern:
+//
+//	metrics.go   the registry, the namespace, build info and the scrape handler
+//	ingest.go    the write-path counters and the Observer that feeds them
 package metrics
 
 import (

@@ -77,6 +77,7 @@ function guideSidebar(): DefaultTheme.SidebarItem[] {
       items: [
         { text: 'Kiến trúc', link: 'architecture' },
         { text: 'Cấu trúc dự án', link: 'project-structure' },
+        { text: 'Pipeline validate', link: 'validation' },
       ],
     },
     {
@@ -138,6 +139,10 @@ function adrSidebar(): DefaultTheme.SidebarItem[] {
       items: [
         { text: 'Tất cả quyết định', link: '/vi/adr/' },
         { text: 'ADR-0001 — Không dùng ORM', link: '0001-no-orm' },
+        {
+          text: 'ADR-0011 — Validate tự viết',
+          link: '0011-hand-written-event-validation',
+        },
       ],
     },
   ]

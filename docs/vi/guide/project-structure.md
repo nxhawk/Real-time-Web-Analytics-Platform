@@ -25,8 +25,8 @@ pulse-analytics/
 │   │   ├── repository/
 │   │   │   ├── clickhouse/         #     kết nối, repo, queries/*.sql nhúng        [L1]
 │   │   │   └── postgres/           #     chỉ dùng để benchmark so sánh             [L3]
-│   │   ├── model/                  #   kiểu domain dùng chung giữa các tầng        [L1]
-│   │   ├── validate/               #   quy tắc validate event                      [L1]
+│   │   ├── model/                  #   kiểu domain dùng chung giữa các tầng        [L1 ✓]
+│   │   ├── validate/               #   quy tắc validate event                      [L1 ✓]
 │   │   ├── buffer/                 #   batch writer, backpressure, WAL fallback    [L3]
 │   │   └── kafka/                  #   producer, consumer, DLQ                     [L4]
 │   ├── config/                     # development|staging|production|test .config.yml

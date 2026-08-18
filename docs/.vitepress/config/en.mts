@@ -75,6 +75,7 @@ function guideSidebar(): DefaultTheme.SidebarItem[] {
       items: [
         { text: 'Architecture', link: 'architecture' },
         { text: 'Project structure', link: 'project-structure' },
+        { text: 'Validation pipeline', link: 'validation' },
       ],
     },
     {
@@ -136,6 +137,10 @@ function adrSidebar(): DefaultTheme.SidebarItem[] {
       items: [
         { text: 'All decisions', link: '/adr/' },
         { text: 'ADR-0001 — No ORM', link: '0001-no-orm' },
+        {
+          text: 'ADR-0011 — Hand-written validation',
+          link: '0011-hand-written-event-validation',
+        },
       ],
     },
   ]

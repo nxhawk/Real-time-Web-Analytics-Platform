@@ -219,6 +219,20 @@ Inside Docker Compose the host is `clickhouse`; from your machine it is `localho
 | `ingest.wal_dir` | `WAL_DIR` | `./data/wal` | Where batches land when ClickHouse cannot be reached |
 | `ingest.max_events_per_request` | `MAX_EVENTS_PER_REQUEST` | `500` | Capped at 500 by the API contract |
 | `ingest.rate_limit_per_min` | `INGEST_RATE_LIMIT_PER_MIN` | `1000` | Per API key |
+| `ingest.sensitive_query_params` | `SENSITIVE_QUERY_PARAMS` | *(empty)* | Extra query parameters stripped from `page` and `referrer`, comma-separated |
+
+::: warning `sensitive_query_params` only adds
+The built-in denylist — `token`, `email`, `password`, `secret`, `otp`, `api_key`, `apikey`,
+`access_token`, `refresh_token`, `id_token`, `authorization`, `passwd`, `pwd` — always applies
+and cannot be switched off from configuration. Leaving this key empty is safe; there is no
+value that turns password stripping off.
+
+Use it for names that are a credential in your application and ordinary analytics data in
+someone else's, such as `code` or `ref`. Matching is case-insensitive. It takes parameter
+*names*: `SENSITIVE_QUERY_PARAMS=code,ref`, not `?code=x`. A value containing `=`, `&`, `?` or
+`#` is a startup error, because a query string pasted here would match nothing while looking
+exactly like a configured privacy control.
+:::
 
 ::: tip These defaults are provisional
 `batch_size` and `flush_interval_ms` are re-tuned in Level 3 from measured throughput, part

@@ -126,6 +126,12 @@ Dùng chung với `TODO.md`: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong 
 | Rate limit analytics | 120 req/phút/IP | như trên |
 | Guard mỗi query | `max_execution_time = 15`, `max_memory_usage = 4GB` | như trên |
 | Timezone mặc định | `Asia/Ho_Chi_Minh` (dữ liệu lưu UTC) | [`PLAN.md` §12.2](PLAN.md#122-analytics-đều-yêu-cầu-x-api-key-hoặc-session-cookie-của-dashboard) |
+| `event` (tên event) | <= 64 ký tự, `^[a-z0-9_]{1,64}$` | [`PLAN.md` §5.2](PLAN.md#52-quy-tắc-validate) |
+| `user_id`, `session_id` | <= 128 ký tự | như trên |
+| `page`, `referrer` | <= 2048 ký tự | như trên |
+| `city` | <= 128 ký tự | `internal/validate` (L1.1) |
+| `os`, `browser`, `utm_*` | <= 64 ký tự (bảo vệ từ điển `LowCardinality`) | như trên |
+| `revenue` | `Decimal(18, 4)` — <= 14 chữ số nguyên, <= 4 chữ số thập phân | [`PLAN.md` §6.1](PLAN.md#61-bảng-raw-events) |
 
 ### 2.4 Tham số vận hành mặc định
 
